@@ -1,5 +1,5 @@
 [submodule "user"]
-	path = admin
+	path = user
 	url = git@github.com:FindMyProfessors/user.git
 [submodule "admin"]
 	path = admin
@@ -11,14 +11,14 @@
 	path = professor
 	url = git@github.com:FindMyProfessors/professor.git
 [submodule "school"]
-	path = knighthacks_user
+	path = school
 	url = git@github.com:FindMyProfessors/school.git
 [submodule "manifest"]
-	path = knighthacks_user
+	path = manifest
 	url = git@github.com:FindMyProfessors/manifest.git
 [submodule "college_scraper"]
-	path = knighthacks_user
+	path = college_scraper
 	url = git@github.com:FindMyProfessors/college_scraper.git
 [submodule "rmp_scraper"]
-	path = knighthacks_user
+	path = rmp_scraper
 	url = git@github.com:FindMyProfessors/rmp_scraper.git
