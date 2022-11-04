@@ -1,0 +1,11 @@
+go 1.19
+
+use (
+    admin
+    college_scraper
+    course
+    professor
+    rmp_scraper
+    school
+    user
+)
