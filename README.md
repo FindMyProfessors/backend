@@ -17,12 +17,9 @@ production currently, for the purpose of clarity.
 Since this repository utilizes git submodules, you must clone the repository recursively use the following command.
 
 ```bash
-eval `ssh-agent`
-ssh-add
 git clone --recurse-submodules -j8 git@github.com:FindMyProfessors/backend.git
 ```
 
-The ssh-agent will save you from typing your passphrase SSH in many times 
 The `-j8` flag parallelizes the cloning to save time in the cloning process.
 
 
@@ -30,6 +27,9 @@ Following the previous command I suggest running the following command inside of
 ```bash
 bash checkoutall.sh main
 ```
+
+Tip: If you are using ssh key passphrases and don't want to type in your passphrase an unbearable amount of times I
+suggest using [ssh-agent](https://www.ssh.com/academy/ssh/add)
 
 ## Requirements
 
