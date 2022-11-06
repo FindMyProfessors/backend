@@ -22,3 +22,6 @@
 [submodule "rmp_scraper"]
 	path = rmp_scraper
 	url = git@github.com:FindMyProfessors/rmp_scraper.git
+[submodule "shared"]
+	path = shared
+	url = git@github.com:FindMyProfessors/shared.git

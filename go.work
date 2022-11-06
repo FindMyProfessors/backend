@@ -8,4 +8,5 @@ use (
     rmp_scraper
     school
     user
+    shared
 )
