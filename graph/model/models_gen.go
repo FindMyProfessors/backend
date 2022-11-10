@@ -13,14 +13,6 @@ type Connection interface {
 	IsConnection()
 }
 
-type Course struct {
-	ID       string               `json:"id"`
-	Name     string               `json:"name"`
-	Code     string               `json:"code"`
-	School   *School              `json:"school"`
-	TaughtBy *ProfessorConnection `json:"taughtBy"`
-}
-
 type CourseConnection struct {
 	TotalCount int       `json:"totalCount"`
 	PageInfo   *PageInfo `json:"pageInfo"`
