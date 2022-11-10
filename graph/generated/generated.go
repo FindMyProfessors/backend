@@ -37,6 +37,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Course() CourseResolver
 	Mutation() MutationResolver
 	Professor() ProfessorResolver
 	Query() QueryResolver
@@ -48,9 +49,26 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Course struct {
+		Code     func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Name     func(childComplexity int) int
+		School   func(childComplexity int) int
+		TaughtBy func(childComplexity int, first int, after *string) int
+	}
+
+	CourseConnection struct {
+		Courses    func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	Mutation struct {
+		CreateCourse    func(childComplexity int, schoolID string, input model.NewCourse) int
 		CreateProfessor func(childComplexity int, schoolID string, input model.NewProfessor) int
+		CreateReview    func(childComplexity int, professorID string, input model.NewReview) int
 		CreateSchool    func(childComplexity int, input model.NewSchool) int
+		MergeProfessor  func(childComplexity int, schoolProfessorID string, rmpProfessorID string) int
 	}
 
 	PageInfo struct {
@@ -65,8 +83,9 @@ type ComplexityRoot struct {
 		ID         func(childComplexity int) int
 		LastName   func(childComplexity int) int
 		MiddleName func(childComplexity int) int
-		Reviews    func(childComplexity int, after *string, first *int) int
+		Reviews    func(childComplexity int, first int, after *string) int
 		Tags       func(childComplexity int) int
+		Teaches    func(childComplexity int, first int, after *string) int
 	}
 
 	ProfessorConnection struct {
@@ -77,9 +96,9 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Professor  func(childComplexity int, id string) int
-		Professors func(childComplexity int, schoolID string, after *string, first *int) int
+		Professors func(childComplexity int, schoolID string, first int, after *string) int
 		School     func(childComplexity int, id string) int
-		Schools    func(childComplexity int, after *string, first *int) int
+		Schools    func(childComplexity int, first int, after *string) int
 	}
 
 	Review struct {
@@ -98,9 +117,11 @@ type ComplexityRoot struct {
 	}
 
 	School struct {
-		ID         func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Professors func(childComplexity int, courseCode string, after *string, first *int) int
+		CourseCodes func(childComplexity int) int
+		Courses     func(childComplexity int, first int, after *string) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Professors  func(childComplexity int, first int, after *string) int
 	}
 
 	SchoolConnection struct {
@@ -110,21 +131,31 @@ type ComplexityRoot struct {
 	}
 }
 
+type CourseResolver interface {
+	School(ctx context.Context, obj *model.Course) (*model.School, error)
+	TaughtBy(ctx context.Context, obj *model.Course, first int, after *string) (*model.ProfessorConnection, error)
+}
 type MutationResolver interface {
 	CreateSchool(ctx context.Context, input model.NewSchool) (*model.School, error)
 	CreateProfessor(ctx context.Context, schoolID string, input model.NewProfessor) (*model.Professor, error)
+	CreateCourse(ctx context.Context, schoolID string, input model.NewCourse) (*model.Course, error)
+	CreateReview(ctx context.Context, professorID string, input model.NewReview) (*model.Review, error)
+	MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string) (*model.Professor, error)
 }
 type ProfessorResolver interface {
-	Reviews(ctx context.Context, obj *model.Professor, after *string, first *int) (*model.ReviewConnection, error)
+	Reviews(ctx context.Context, obj *model.Professor, first int, after *string) (*model.ReviewConnection, error)
+	Teaches(ctx context.Context, obj *model.Professor, first int, after *string) (*model.CourseConnection, error)
 }
 type QueryResolver interface {
 	Professor(ctx context.Context, id string) (*model.Professor, error)
 	School(ctx context.Context, id string) (*model.School, error)
-	Schools(ctx context.Context, after *string, first *int) (*model.SchoolConnection, error)
-	Professors(ctx context.Context, schoolID string, after *string, first *int) (*model.ProfessorConnection, error)
+	Schools(ctx context.Context, first int, after *string) (*model.SchoolConnection, error)
+	Professors(ctx context.Context, schoolID string, first int, after *string) (*model.ProfessorConnection, error)
 }
 type SchoolResolver interface {
-	Professors(ctx context.Context, obj *model.School, courseCode string, after *string, first *int) (*model.ProfessorConnection, error)
+	CourseCodes(ctx context.Context, obj *model.School) ([]*string, error)
+	Courses(ctx context.Context, obj *model.School, first int, after *string) (*model.CourseConnection, error)
+	Professors(ctx context.Context, obj *model.School, first int, after *string) (*model.ProfessorConnection, error)
 }
 
 type executableSchema struct {
@@ -142,6 +173,79 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Course.code":
+		if e.complexity.Course.Code == nil {
+			break
+		}
+
+		return e.complexity.Course.Code(childComplexity), true
+
+	case "Course.id":
+		if e.complexity.Course.ID == nil {
+			break
+		}
+
+		return e.complexity.Course.ID(childComplexity), true
+
+	case "Course.name":
+		if e.complexity.Course.Name == nil {
+			break
+		}
+
+		return e.complexity.Course.Name(childComplexity), true
+
+	case "Course.school":
+		if e.complexity.Course.School == nil {
+			break
+		}
+
+		return e.complexity.Course.School(childComplexity), true
+
+	case "Course.taughtBy":
+		if e.complexity.Course.TaughtBy == nil {
+			break
+		}
+
+		args, err := ec.field_Course_taughtBy_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Course.TaughtBy(childComplexity, args["first"].(int), args["after"].(*string)), true
+
+	case "CourseConnection.courses":
+		if e.complexity.CourseConnection.Courses == nil {
+			break
+		}
+
+		return e.complexity.CourseConnection.Courses(childComplexity), true
+
+	case "CourseConnection.pageInfo":
+		if e.complexity.CourseConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.CourseConnection.PageInfo(childComplexity), true
+
+	case "CourseConnection.totalCount":
+		if e.complexity.CourseConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.CourseConnection.TotalCount(childComplexity), true
+
+	case "Mutation.createCourse":
+		if e.complexity.Mutation.CreateCourse == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createCourse_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateCourse(childComplexity, args["schoolId"].(string), args["input"].(model.NewCourse)), true
+
 	case "Mutation.createProfessor":
 		if e.complexity.Mutation.CreateProfessor == nil {
 			break
@@ -154,6 +258,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateProfessor(childComplexity, args["schoolId"].(string), args["input"].(model.NewProfessor)), true
 
+	case "Mutation.createReview":
+		if e.complexity.Mutation.CreateReview == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createReview_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateReview(childComplexity, args["professorId"].(string), args["input"].(model.NewReview)), true
+
 	case "Mutation.createSchool":
 		if e.complexity.Mutation.CreateSchool == nil {
 			break
@@ -165,6 +281,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateSchool(childComplexity, args["input"].(model.NewSchool)), true
+
+	case "Mutation.mergeProfessor":
+		if e.complexity.Mutation.MergeProfessor == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_mergeProfessor_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MergeProfessor(childComplexity, args["schoolProfessorId"].(string), args["rmpProfessorId"].(string)), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -232,7 +360,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Professor.Reviews(childComplexity, args["after"].(*string), args["first"].(*int)), true
+		return e.complexity.Professor.Reviews(childComplexity, args["first"].(int), args["after"].(*string)), true
 
 	case "Professor.tags":
 		if e.complexity.Professor.Tags == nil {
@@ -240,6 +368,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Professor.Tags(childComplexity), true
+
+	case "Professor.teaches":
+		if e.complexity.Professor.Teaches == nil {
+			break
+		}
+
+		args, err := ec.field_Professor_teaches_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Professor.Teaches(childComplexity, args["first"].(int), args["after"].(*string)), true
 
 	case "ProfessorConnection.pageInfo":
 		if e.complexity.ProfessorConnection.PageInfo == nil {
@@ -284,7 +424,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Professors(childComplexity, args["schoolId"].(string), args["after"].(*string), args["first"].(*int)), true
+		return e.complexity.Query.Professors(childComplexity, args["schoolId"].(string), args["first"].(int), args["after"].(*string)), true
 
 	case "Query.school":
 		if e.complexity.Query.School == nil {
@@ -308,7 +448,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Schools(childComplexity, args["after"].(*string), args["first"].(*int)), true
+		return e.complexity.Query.Schools(childComplexity, args["first"].(int), args["after"].(*string)), true
 
 	case "Review.difficulty":
 		if e.complexity.Review.Difficulty == nil {
@@ -373,6 +513,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ReviewConnection.TotalCount(childComplexity), true
 
+	case "School.courseCodes":
+		if e.complexity.School.CourseCodes == nil {
+			break
+		}
+
+		return e.complexity.School.CourseCodes(childComplexity), true
+
+	case "School.courses":
+		if e.complexity.School.Courses == nil {
+			break
+		}
+
+		args, err := ec.field_School_courses_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.School.Courses(childComplexity, args["first"].(int), args["after"].(*string)), true
+
 	case "School.id":
 		if e.complexity.School.ID == nil {
 			break
@@ -397,7 +556,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.School.Professors(childComplexity, args["courseCode"].(string), args["after"].(*string), args["first"].(*int)), true
+		return e.complexity.School.Professors(childComplexity, args["first"].(int), args["after"].(*string)), true
 
 	case "SchoolConnection.pageInfo":
 		if e.complexity.SchoolConnection.PageInfo == nil {
@@ -428,7 +587,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputNewCourse,
 		ec.unmarshalInputNewProfessor,
+		ec.unmarshalInputNewReview,
 		ec.unmarshalInputNewSchool,
 	)
 	first := true
@@ -490,112 +651,138 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../schema.graphqls", Input: `
-scalar Time
+	{Name: "../schema.graphqls", Input: `scalar Time
 # noinspection GraphQLInvalidDirectiveLocation, GraphQLDuplicateDirective,GraphQLUnresolvedReference,GraphQLMemberRedefinition,GraphQLMissingType,GraphQLTypeRedefinition
 
 directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION
-  | FIELD_DEFINITION
+    | FIELD_DEFINITION
 
 directive @pagination(maxLength: Int!) on FIELD_DEFINITION
 
 type School {
-  id: ID!
-  name: String!
-  """
-  Returns a list of professors that teach at this school
-  """
-  professors(courseCode: String!, after: String, first: Int = 50): ProfessorConnection! @pagination(maxLength: 20) @goField(forceResolver: true)
+    id: ID!
+    name: String!
+    """
+    Returns a list of professors that teach at this school
+    """
+    courseCodes: [String]! @goField(forceResolver: true)
+    courses(first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    professors(first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
 }
 
 type Professor {
-  id: ID!
-  firstName: String!
-  lastName: String!
-  middleName: String
+    id: ID!
+    firstName: String!
+    lastName: String!
+    middleName: String
 
-  tags: [Tag!]!
-  reviews(after: String, first: Int = 25): ReviewConnection! @pagination(maxLength: 20) @goField(forceResolver: true)
+    tags: [Tag!]!
+    reviews(first: Int! = 50, after: String): ReviewConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    teaches(first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+}
+
+type Course {
+    id: ID!
+    name: String!
+    code: String!
+    school: School @goField(forceResolver: true)
+    taughtBy(first: Int! = 50, after: String): ProfessorConnection @pagination(maxLength: 50) @goField(forceResolver: true)
+}
+
+input NewCourse {
+    name: String!
+    code: String!
 }
 
 enum Grade {
-  A_PLUS
-  A
-  A_MINUS
+    A_PLUS
+    A
+    A_MINUS
 
-  B_PLUS
-  B
-  B_MINUS
+    B_PLUS
+    B
+    B_MINUS
 
-  C_PLUS
-  C
-  C_MINUS
+    C_PLUS
+    C
+    C_MINUS
 
-  D_PLUS
-  D
-  D_MINUS
+    D_PLUS
+    D
+    D_MINUS
 
-  F_PLUS
-  F
-  F_MINUS
+    F_PLUS
+    F
+    F_MINUS
 
-  INCOMPLETE
-  WITHDRAWN
-  NOT_SURE
-  OTHER
+    INCOMPLETE
+    WITHDRAWN
+    NOT_SURE
+    OTHER
 }
 
 enum Tag {
-  TOUGH_GRADER
-  GET_READY_TO_READ
-  PARTICIPATION_MATTERS
-  EXTRA_CREDIT
-  GROUP_PROJECTS
-  AMAZING_LECTURES
-  CLEAR_GRADING_CRITERIA
-  GIVES_GOOD_FEEDBACK
-  INSPIRATIONAL
-  LOTS_OF_HOMEWORK
-  HILARIOUS
-  BEWARE_OF_POP_QUIZZES
-  SO_MANY_PAPERS
-  CARING
-  RESPECTED
-  LECTURE_HEAVY
-  GRADED_BY_FEW_THINGS
-  ACCESSIBLE_OUTSIDE_CLASS
-  ONLINE_SAVVY
+    TOUGH_GRADER
+    GET_READY_TO_READ
+    PARTICIPATION_MATTERS
+    EXTRA_CREDIT
+    GROUP_PROJECTS
+    AMAZING_LECTURES
+    CLEAR_GRADING_CRITERIA
+    GIVES_GOOD_FEEDBACK
+    INSPIRATIONAL
+    LOTS_OF_HOMEWORK
+    HILARIOUS
+    BEWARE_OF_POP_QUIZZES
+    SO_MANY_PAPERS
+    CARING
+    RESPECTED
+    LECTURE_HEAVY
+    GRADED_BY_FEW_THINGS
+    ACCESSIBLE_OUTSIDE_CLASS
+    ONLINE_SAVVY
 }
 
 type Review {
-  id: ID!
-  quality: Float!
-  difficulty: Float!
-  time: Time!
-  tags: [Tag!]!
-  grade: Grade!
+    id: ID!
+    quality: Float!
+    difficulty: Float!
+    time: Time!
+    tags: [Tag!]!
+    grade: Grade!
+}
+
+input NewReview {
+    quality: Float!
+    difficulty: Float!
+    time: Time!
+    tags: [Tag!]!
+    grade: Grade!
 }
 
 input NewProfessor {
-  firstName: String!
-  lastName: String!
-  middleName: String
+    firstName: String!
+    lastName: String!
+    rmpId: String
 }
 
 type Query {
-  professor(id: ID!): Professor
-  school(id: ID!): School
-  schools(after: String, first: Int = 25): SchoolConnection! @pagination(maxLength: 20) @goField(forceResolver: true)
-  professors(schoolId: ID!, after: String, first: Int = 25): ProfessorConnection! @pagination(maxLength: 20) @goField(forceResolver: true)
+    professor(id: ID!): Professor
+    school(id: ID!): School
+    schools(first: Int! = 50, after: String): SchoolConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    professors(schoolId: ID!,first: Int! = 25 after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
 }
 
 input NewSchool {
-  name: String!
+    name: String!
 }
 
 type Mutation {
-  createSchool(input: NewSchool!): School!
-  createProfessor(schoolId: String!, input: NewProfessor!): Professor
+    createSchool(input: NewSchool!): School!
+    createProfessor(schoolId: ID!, input: NewProfessor!): Professor
+    createCourse(schoolId: ID!, input: NewCourse!): Course
+    createReview(professorId: ID!, input: NewReview!): Review
+    mergeProfessor(schoolProfessorId: ID!, rmpProfessorId: ID!): Professor
 }
 
 #██████   █████   ██████  ██ ███    ██  █████  ████████ ██  ██████  ███    ██
@@ -607,42 +794,50 @@ type Mutation {
 # For more information regarding the connection model of pagination view:
 # https://graphql.org/learn/pagination/#complete-connection-model
 interface Connection {
-  # The total number of entries
-  totalCount: Int!
-  # Information for paginating this connection
-  pageInfo: PageInfo!
+    # The total number of entries
+    totalCount: Int!
+    # Information for paginating this connection
+    pageInfo: PageInfo!
 }
 
 type PageInfo {
-  startCursor: String!
-  endCursor: String!
+    startCursor: String!
+    endCursor: String!
 
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    hasNextPage: Boolean!
 }
 
 type SchoolConnection implements Connection {
-  # Inherited fields from Connection
-  totalCount: Int!
-  pageInfo: PageInfo!
+    # Inherited fields from Connection
+    totalCount: Int!
+    pageInfo: PageInfo!
 
-  schools: [School!]!
+    schools: [School!]!
 }
 
 type ProfessorConnection implements Connection {
-  # Inherited fields from Connection
-  totalCount: Int!
-  pageInfo: PageInfo!
+    # Inherited fields from Connection
+    totalCount: Int!
+    pageInfo: PageInfo!
 
-  professors: [Professor!]!
+    professors: [Professor!]!
+}
+
+type CourseConnection implements Connection {
+    # Inherited fields from Connection
+    totalCount: Int!
+    pageInfo: PageInfo!
+
+    courses: [Course!]!
 }
 
 type ReviewConnection implements Connection {
-  # Inherited fields from Connection
-  totalCount: Int!
-  pageInfo: PageInfo!
+    # Inherited fields from Connection
+    totalCount: Int!
+    pageInfo: PageInfo!
 
-  reviews: [Review!]!
+    reviews: [Review!]!
 }
 `, BuiltIn: false},
 }
@@ -667,13 +862,61 @@ func (ec *executionContext) dir_pagination_args(ctx context.Context, rawArgs map
 	return args, nil
 }
 
+func (ec *executionContext) field_Course_taughtBy_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createCourse_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["schoolId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("schoolId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["schoolId"] = arg0
+	var arg1 model.NewCourse
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalNNewCourse2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐNewCourse(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createProfessor_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["schoolId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("schoolId"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -683,6 +926,30 @@ func (ec *executionContext) field_Mutation_createProfessor_args(ctx context.Cont
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg1, err = ec.unmarshalNNewProfessor2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐNewProfessor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createReview_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["professorId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("professorId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["professorId"] = arg0
+	var arg1 model.NewReview
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalNNewReview2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐNewReview(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -706,27 +973,75 @@ func (ec *executionContext) field_Mutation_createSchool_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_mergeProfessor_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["schoolProfessorId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("schoolProfessorId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["schoolProfessorId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["rmpProfessorId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rmpProfessorId"))
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["rmpProfessorId"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Professor_reviews_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg0
-	var arg1 *int
+	var arg0 int
 	if tmp, ok := rawArgs["first"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg1
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Professor_teaches_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
 	return args, nil
 }
 
@@ -772,24 +1087,24 @@ func (ec *executionContext) field_Query_professors_args(ctx context.Context, raw
 		}
 	}
 	args["schoolId"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg1
-	var arg2 *int
+	var arg1 int
 	if tmp, ok := rawArgs["first"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg2
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -811,39 +1126,15 @@ func (ec *executionContext) field_Query_school_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_schools_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg0
-	var arg1 *int
+	var arg0 int
 	if tmp, ok := rawArgs["first"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_School_professors_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["courseCode"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("courseCode"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["courseCode"] = arg0
+	args["first"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["after"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
@@ -853,15 +1144,54 @@ func (ec *executionContext) field_School_professors_args(ctx context.Context, ra
 		}
 	}
 	args["after"] = arg1
-	var arg2 *int
+	return args, nil
+}
+
+func (ec *executionContext) field_School_courses_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
 	if tmp, ok := rawArgs["first"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg2
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_School_professors_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
 	return args, nil
 }
 
@@ -902,6 +1232,429 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _Course_id(ctx context.Context, field graphql.CollectedField, obj *model.Course) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Course_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Course_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Course",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Course_name(ctx context.Context, field graphql.CollectedField, obj *model.Course) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Course_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Course_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Course",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Course_code(ctx context.Context, field graphql.CollectedField, obj *model.Course) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Course_code(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Code, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Course_code(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Course",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Course_school(ctx context.Context, field graphql.CollectedField, obj *model.Course) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Course_school(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Course().School(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.School)
+	fc.Result = res
+	return ec.marshalOSchool2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐSchool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Course_school(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Course",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_School_id(ctx, field)
+			case "name":
+				return ec.fieldContext_School_name(ctx, field)
+			case "courseCodes":
+				return ec.fieldContext_School_courseCodes(ctx, field)
+			case "courses":
+				return ec.fieldContext_School_courses(ctx, field)
+			case "professors":
+				return ec.fieldContext_School_professors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type School", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Course_taughtBy(ctx context.Context, field graphql.CollectedField, obj *model.Course) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Course_taughtBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Course().TaughtBy(rctx, obj, fc.Args["first"].(int), fc.Args["after"].(*string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Pagination == nil {
+				return nil, errors.New("directive pagination is not implemented")
+			}
+			return ec.directives.Pagination(ctx, obj, directive0, maxLength)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.ProfessorConnection); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/FindMyProfessors/backend/graph/model.ProfessorConnection`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ProfessorConnection)
+	fc.Result = res
+	return ec.marshalOProfessorConnection2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Course_taughtBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Course",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "totalCount":
+				return ec.fieldContext_ProfessorConnection_totalCount(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_ProfessorConnection_pageInfo(ctx, field)
+			case "professors":
+				return ec.fieldContext_ProfessorConnection_professors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfessorConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Course_taughtBy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourseConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.CourseConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourseConnection_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourseConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourseConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourseConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.CourseConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourseConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourseConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourseConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourseConnection_courses(ctx context.Context, field graphql.CollectedField, obj *model.CourseConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourseConnection_courses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Courses, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Course)
+	fc.Result = res
+	return ec.marshalNCourse2ᚕᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourseᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourseConnection_courses(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourseConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Course_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Course_name(ctx, field)
+			case "code":
+				return ec.fieldContext_Course_code(ctx, field)
+			case "school":
+				return ec.fieldContext_Course_school(ctx, field)
+			case "taughtBy":
+				return ec.fieldContext_Course_taughtBy(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Course", field.Name)
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Mutation_createSchool(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createSchool(ctx, field)
@@ -946,6 +1699,10 @@ func (ec *executionContext) fieldContext_Mutation_createSchool(ctx context.Conte
 				return ec.fieldContext_School_id(ctx, field)
 			case "name":
 				return ec.fieldContext_School_name(ctx, field)
+			case "courseCodes":
+				return ec.fieldContext_School_courseCodes(ctx, field)
+			case "courses":
+				return ec.fieldContext_School_courses(ctx, field)
 			case "professors":
 				return ec.fieldContext_School_professors(ctx, field)
 			}
@@ -1014,6 +1771,8 @@ func (ec *executionContext) fieldContext_Mutation_createProfessor(ctx context.Co
 				return ec.fieldContext_Professor_tags(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Professor_reviews(ctx, field)
+			case "teaches":
+				return ec.fieldContext_Professor_teaches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Professor", field.Name)
 		},
@@ -1026,6 +1785,204 @@ func (ec *executionContext) fieldContext_Mutation_createProfessor(ctx context.Co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createProfessor_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createCourse(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createCourse(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateCourse(rctx, fc.Args["schoolId"].(string), fc.Args["input"].(model.NewCourse))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Course)
+	fc.Result = res
+	return ec.marshalOCourse2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createCourse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Course_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Course_name(ctx, field)
+			case "code":
+				return ec.fieldContext_Course_code(ctx, field)
+			case "school":
+				return ec.fieldContext_Course_school(ctx, field)
+			case "taughtBy":
+				return ec.fieldContext_Course_taughtBy(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Course", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createCourse_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createReview(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createReview(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateReview(rctx, fc.Args["professorId"].(string), fc.Args["input"].(model.NewReview))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Review)
+	fc.Result = res
+	return ec.marshalOReview2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐReview(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createReview(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Review_id(ctx, field)
+			case "quality":
+				return ec.fieldContext_Review_quality(ctx, field)
+			case "difficulty":
+				return ec.fieldContext_Review_difficulty(ctx, field)
+			case "time":
+				return ec.fieldContext_Review_time(ctx, field)
+			case "tags":
+				return ec.fieldContext_Review_tags(ctx, field)
+			case "grade":
+				return ec.fieldContext_Review_grade(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Review", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createReview_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_mergeProfessor(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_mergeProfessor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().MergeProfessor(rctx, fc.Args["schoolProfessorId"].(string), fc.Args["rmpProfessorId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Professor)
+	fc.Result = res
+	return ec.marshalOProfessor2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessor(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_mergeProfessor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Professor_id(ctx, field)
+			case "firstName":
+				return ec.fieldContext_Professor_firstName(ctx, field)
+			case "lastName":
+				return ec.fieldContext_Professor_lastName(ctx, field)
+			case "middleName":
+				return ec.fieldContext_Professor_middleName(ctx, field)
+			case "tags":
+				return ec.fieldContext_Professor_tags(ctx, field)
+			case "reviews":
+				return ec.fieldContext_Professor_reviews(ctx, field)
+			case "teaches":
+				return ec.fieldContext_Professor_teaches(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Professor", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_mergeProfessor_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -1440,10 +2397,10 @@ func (ec *executionContext) _Professor_reviews(ctx context.Context, field graphq
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Professor().Reviews(rctx, obj, fc.Args["after"].(*string), fc.Args["first"].(*int))
+			return ec.resolvers.Professor().Reviews(rctx, obj, fc.Args["first"].(int), fc.Args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			maxLength, err := ec.unmarshalNInt2int(ctx, 20)
+			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
 			if err != nil {
 				return nil, err
 			}
@@ -1506,6 +2463,93 @@ func (ec *executionContext) fieldContext_Professor_reviews(ctx context.Context, 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Professor_reviews_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Professor_teaches(ctx context.Context, field graphql.CollectedField, obj *model.Professor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Professor_teaches(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Professor().Teaches(rctx, obj, fc.Args["first"].(int), fc.Args["after"].(*string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Pagination == nil {
+				return nil, errors.New("directive pagination is not implemented")
+			}
+			return ec.directives.Pagination(ctx, obj, directive0, maxLength)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.CourseConnection); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/FindMyProfessors/backend/graph/model.CourseConnection`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.CourseConnection)
+	fc.Result = res
+	return ec.marshalNCourseConnection2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourseConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Professor_teaches(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Professor",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "totalCount":
+				return ec.fieldContext_CourseConnection_totalCount(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_CourseConnection_pageInfo(ctx, field)
+			case "courses":
+				return ec.fieldContext_CourseConnection_courses(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CourseConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Professor_teaches_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -1661,6 +2705,8 @@ func (ec *executionContext) fieldContext_ProfessorConnection_professors(ctx cont
 				return ec.fieldContext_Professor_tags(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Professor_reviews(ctx, field)
+			case "teaches":
+				return ec.fieldContext_Professor_teaches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Professor", field.Name)
 		},
@@ -1716,6 +2762,8 @@ func (ec *executionContext) fieldContext_Query_professor(ctx context.Context, fi
 				return ec.fieldContext_Professor_tags(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Professor_reviews(ctx, field)
+			case "teaches":
+				return ec.fieldContext_Professor_teaches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Professor", field.Name)
 		},
@@ -1774,6 +2822,10 @@ func (ec *executionContext) fieldContext_Query_school(ctx context.Context, field
 				return ec.fieldContext_School_id(ctx, field)
 			case "name":
 				return ec.fieldContext_School_name(ctx, field)
+			case "courseCodes":
+				return ec.fieldContext_School_courseCodes(ctx, field)
+			case "courses":
+				return ec.fieldContext_School_courses(ctx, field)
 			case "professors":
 				return ec.fieldContext_School_professors(ctx, field)
 			}
@@ -1809,10 +2861,10 @@ func (ec *executionContext) _Query_schools(ctx context.Context, field graphql.Co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Schools(rctx, fc.Args["after"].(*string), fc.Args["first"].(*int))
+			return ec.resolvers.Query().Schools(rctx, fc.Args["first"].(int), fc.Args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			maxLength, err := ec.unmarshalNInt2int(ctx, 20)
+			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
 			if err != nil {
 				return nil, err
 			}
@@ -1896,10 +2948,10 @@ func (ec *executionContext) _Query_professors(ctx context.Context, field graphql
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Professors(rctx, fc.Args["schoolId"].(string), fc.Args["after"].(*string), fc.Args["first"].(*int))
+			return ec.resolvers.Query().Professors(rctx, fc.Args["schoolId"].(string), fc.Args["first"].(int), fc.Args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			maxLength, err := ec.unmarshalNInt2int(ctx, 20)
+			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
 			if err != nil {
 				return nil, err
 			}
@@ -2605,6 +3657,137 @@ func (ec *executionContext) fieldContext_School_name(ctx context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _School_courseCodes(ctx context.Context, field graphql.CollectedField, obj *model.School) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_School_courseCodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.School().CourseCodes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_School_courseCodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "School",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _School_courses(ctx context.Context, field graphql.CollectedField, obj *model.School) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_School_courses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.School().Courses(rctx, obj, fc.Args["first"].(int), fc.Args["after"].(*string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Pagination == nil {
+				return nil, errors.New("directive pagination is not implemented")
+			}
+			return ec.directives.Pagination(ctx, obj, directive0, maxLength)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.CourseConnection); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/FindMyProfessors/backend/graph/model.CourseConnection`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.CourseConnection)
+	fc.Result = res
+	return ec.marshalNCourseConnection2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourseConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_School_courses(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "School",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "totalCount":
+				return ec.fieldContext_CourseConnection_totalCount(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_CourseConnection_pageInfo(ctx, field)
+			case "courses":
+				return ec.fieldContext_CourseConnection_courses(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CourseConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_School_courses_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _School_professors(ctx context.Context, field graphql.CollectedField, obj *model.School) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_School_professors(ctx, field)
 	if err != nil {
@@ -2620,10 +3803,10 @@ func (ec *executionContext) _School_professors(ctx context.Context, field graphq
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.School().Professors(rctx, obj, fc.Args["courseCode"].(string), fc.Args["after"].(*string), fc.Args["first"].(*int))
+			return ec.resolvers.School().Professors(rctx, obj, fc.Args["first"].(int), fc.Args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			maxLength, err := ec.unmarshalNInt2int(ctx, 20)
+			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
 			if err != nil {
 				return nil, err
 			}
@@ -2833,6 +4016,10 @@ func (ec *executionContext) fieldContext_SchoolConnection_schools(ctx context.Co
 				return ec.fieldContext_School_id(ctx, field)
 			case "name":
 				return ec.fieldContext_School_name(ctx, field)
+			case "courseCodes":
+				return ec.fieldContext_School_courseCodes(ctx, field)
+			case "courses":
+				return ec.fieldContext_School_courses(ctx, field)
 			case "professors":
 				return ec.fieldContext_School_professors(ctx, field)
 			}
@@ -4615,6 +5802,42 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputNewCourse(ctx context.Context, obj interface{}) (model.NewCourse, error) {
+	var it model.NewCourse
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "code"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "code":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
+			it.Code, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewProfessor(ctx context.Context, obj interface{}) (model.NewProfessor, error) {
 	var it model.NewProfessor
 	asMap := map[string]interface{}{}
@@ -4622,7 +5845,7 @@ func (ec *executionContext) unmarshalInputNewProfessor(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"firstName", "lastName", "middleName"}
+	fieldsInOrder := [...]string{"firstName", "lastName", "rmpId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4645,11 +5868,71 @@ func (ec *executionContext) unmarshalInputNewProfessor(ctx context.Context, obj 
 			if err != nil {
 				return it, err
 			}
-		case "middleName":
+		case "rmpId":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("middleName"))
-			it.MiddleName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rmpId"))
+			it.RmpID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNewReview(ctx context.Context, obj interface{}) (model.NewReview, error) {
+	var it model.NewReview
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"quality", "difficulty", "time", "tags", "grade"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "quality":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quality"))
+			it.Quality, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "difficulty":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("difficulty"))
+			it.Difficulty, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "time":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("time"))
+			it.Time, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "tags":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			it.Tags, err = ec.unmarshalNTag2ᚕgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐTagᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "grade":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("grade"))
+			it.Grade, err = ec.unmarshalNGrade2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐGrade(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4709,6 +5992,13 @@ func (ec *executionContext) _Connection(ctx context.Context, sel ast.SelectionSe
 			return graphql.Null
 		}
 		return ec._ProfessorConnection(ctx, sel, obj)
+	case model.CourseConnection:
+		return ec._CourseConnection(ctx, sel, &obj)
+	case *model.CourseConnection:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._CourseConnection(ctx, sel, obj)
 	case model.ReviewConnection:
 		return ec._ReviewConnection(ctx, sel, &obj)
 	case *model.ReviewConnection:
@@ -4724,6 +6014,124 @@ func (ec *executionContext) _Connection(ctx context.Context, sel ast.SelectionSe
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var courseImplementors = []string{"Course"}
+
+func (ec *executionContext) _Course(ctx context.Context, sel ast.SelectionSet, obj *model.Course) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, courseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Course")
+		case "id":
+
+			out.Values[i] = ec._Course_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "name":
+
+			out.Values[i] = ec._Course_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "code":
+
+			out.Values[i] = ec._Course_code(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "school":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Course_school(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "taughtBy":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Course_taughtBy(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var courseConnectionImplementors = []string{"CourseConnection", "Connection"}
+
+func (ec *executionContext) _CourseConnection(ctx context.Context, sel ast.SelectionSet, obj *model.CourseConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, courseConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CourseConnection")
+		case "totalCount":
+
+			out.Values[i] = ec._CourseConnection_totalCount(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+
+			out.Values[i] = ec._CourseConnection_pageInfo(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "courses":
+
+			out.Values[i] = ec._CourseConnection_courses(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
 var mutationImplementors = []string{"Mutation"}
 
@@ -4757,6 +6165,24 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createProfessor(ctx, field)
+			})
+
+		case "createCourse":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createCourse(ctx, field)
+			})
+
+		case "createReview":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createReview(ctx, field)
+			})
+
+		case "mergeProfessor":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_mergeProfessor(ctx, field)
 			})
 
 		default:
@@ -4871,6 +6297,26 @@ func (ec *executionContext) _Professor(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._Professor_reviews(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "teaches":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Professor_teaches(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -5191,6 +6637,46 @@ func (ec *executionContext) _School(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "courseCodes":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._School_courseCodes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "courses":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._School_courses(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "professors":
 			field := field
 
@@ -5597,6 +7083,74 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNCourse2ᚕᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourseᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Course) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCourse2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourse(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCourse2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourse(ctx context.Context, sel ast.SelectionSet, v *model.Course) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Course(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNCourseConnection2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourseConnection(ctx context.Context, sel ast.SelectionSet, v model.CourseConnection) graphql.Marshaler {
+	return ec._CourseConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCourseConnection2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourseConnection(ctx context.Context, sel ast.SelectionSet, v *model.CourseConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CourseConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	res, err := graphql.UnmarshalFloatContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5652,8 +7206,18 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) unmarshalNNewCourse2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐNewCourse(ctx context.Context, v interface{}) (model.NewCourse, error) {
+	res, err := ec.unmarshalInputNewCourse(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNNewProfessor2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐNewProfessor(ctx context.Context, v interface{}) (model.NewProfessor, error) {
 	res, err := ec.unmarshalInputNewProfessor(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNNewReview2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐNewReview(ctx context.Context, v interface{}) (model.NewReview, error) {
+	res, err := ec.unmarshalInputNewReview(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -5893,6 +7457,32 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNTag2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐTag(ctx context.Context, v interface{}) (model.Tag, error) {
@@ -6260,20 +7850,11 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalInt(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+func (ec *executionContext) marshalOCourse2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourse(ctx context.Context, sel ast.SelectionSet, v *model.Course) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	res := graphql.MarshalInt(*v)
-	return res
+	return ec._Course(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProfessor2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessor(ctx context.Context, sel ast.SelectionSet, v *model.Professor) graphql.Marshaler {
@@ -6281,6 +7862,20 @@ func (ec *executionContext) marshalOProfessor2ᚖgithubᚗcomᚋFindMyProfessors
 		return graphql.Null
 	}
 	return ec._Professor(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOProfessorConnection2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorConnection(ctx context.Context, sel ast.SelectionSet, v *model.ProfessorConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProfessorConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReview2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐReview(ctx context.Context, sel ast.SelectionSet, v *model.Review) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Review(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSchool2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐSchool(ctx context.Context, sel ast.SelectionSet, v *model.School) graphql.Marshaler {

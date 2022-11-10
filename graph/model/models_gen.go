@@ -13,10 +13,39 @@ type Connection interface {
 	IsConnection()
 }
 
+type Course struct {
+	ID       string               `json:"id"`
+	Name     string               `json:"name"`
+	Code     string               `json:"code"`
+	School   *School              `json:"school"`
+	TaughtBy *ProfessorConnection `json:"taughtBy"`
+}
+
+type CourseConnection struct {
+	TotalCount int       `json:"totalCount"`
+	PageInfo   *PageInfo `json:"pageInfo"`
+	Courses    []*Course `json:"courses"`
+}
+
+func (CourseConnection) IsConnection() {}
+
+type NewCourse struct {
+	Name string `json:"name"`
+	Code string `json:"code"`
+}
+
 type NewProfessor struct {
-	FirstName  string  `json:"firstName"`
-	LastName   string  `json:"lastName"`
-	MiddleName *string `json:"middleName"`
+	FirstName string  `json:"firstName"`
+	LastName  string  `json:"lastName"`
+	RmpID     *string `json:"rmpId"`
+}
+
+type NewReview struct {
+	Quality    float64   `json:"quality"`
+	Difficulty float64   `json:"difficulty"`
+	Time       time.Time `json:"time"`
+	Tags       []Tag     `json:"tags"`
+	Grade      Grade     `json:"grade"`
 }
 
 type NewSchool struct {
@@ -37,6 +66,7 @@ type Professor struct {
 	MiddleName *string           `json:"middleName"`
 	Tags       []Tag             `json:"tags"`
 	Reviews    *ReviewConnection `json:"reviews"`
+	Teaches    *CourseConnection `json:"teaches"`
 }
 
 type ProfessorConnection struct {
@@ -68,7 +98,9 @@ type School struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	// Returns a list of professors that teach at this school
-	Professors *ProfessorConnection `json:"professors"`
+	CourseCodes []*string            `json:"courseCodes"`
+	Courses     *CourseConnection    `json:"courses"`
+	Professors  *ProfessorConnection `json:"professors"`
 }
 
 type SchoolConnection struct {
