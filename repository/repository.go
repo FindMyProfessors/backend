@@ -25,7 +25,7 @@ type Repository interface {
 
 	// Course Type
 	GetSchoolByCourse(ctx context.Context, courseId string) (school *model.School, err error)
-	GetProfessorsByCourse(ctx context.Context, courseId string, first int, after *string) (professors []*model.Professor, total int, err error)
+	GetProfessorsByCourse(ctx context.Context, obj *model.Course, first int, after *string) (professors []*model.Professor, total int, err error)
 	GetCourseById(ctx context.Context, id string) (course *model.Course, err error)
 
 	// Edge Case Mutations
