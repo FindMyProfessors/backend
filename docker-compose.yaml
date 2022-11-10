@@ -1,0 +1,22 @@
+services:
+  backend:
+    depends_on:
+      - postgres
+    build:
+      dockerfile: ./Dockerfile
+    environment:
+      GIN_MODE: "debug"
+      TRUSTED_PROXIES: ""
+      DATABASE_URI: "postgresql://postgres:test@postgres:5432/postgres"
+  postgres:
+    image: "postgres:15-alpine"
+    restart: always
+    command: [ "postgres", "-c", "log_statement=all" ]
+    environment:
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./.testing/postgres/init.sql:/docker-entrypoint-initdb.d/db.sql
+      - ./.testing/postgres/data:/var/lib/postgresql/data:z
+      - ./.testing/postgres/logs:/logs:z
