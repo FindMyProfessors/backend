@@ -4,13 +4,10 @@ services:
       - postgres
     build:
       dockerfile: ./Dockerfile
-    #env_file: [ .env ]
     environment:
       GIN_MODE: "debug"
       TRUSTED_PROXIES: ""
       DATABASE_URI: "postgresql://postgres:test@postgres:5432/postgres"
-    volumes:
-      - ./testing/email-templates:/etc/config
   postgres:
     image: "postgres:15-alpine"
     restart: always
