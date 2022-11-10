@@ -1,0 +1,153 @@
+scalar Time
+# noinspection GraphQLInvalidDirectiveLocation, GraphQLDuplicateDirective,GraphQLUnresolvedReference,GraphQLMemberRedefinition,GraphQLMissingType,GraphQLTypeRedefinition
+
+directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION
+  | FIELD_DEFINITION
+
+directive @pagination(maxLength: Int!) on FIELD_DEFINITION
+
+type School {
+  id: ID!
+  name: String!
+  """
+  Returns a list of professors that teach at this school
+  """
+  professors(courseCode: String!, after: String, first: Int = 50): ProfessorConnection! @pagination(maxLength: 20) @goField(forceResolver: true)
+}
+
+type Professor {
+  id: ID!
+  firstName: String!
+  lastName: String!
+  middleName: String
+
+  tags: [Tag!]!
+  reviews(after: String, first: Int = 25): ReviewConnection! @pagination(maxLength: 20) @goField(forceResolver: true)
+}
+
+enum Grade {
+  A_PLUS
+  A
+  A_MINUS
+
+  B_PLUS
+  B
+  B_MINUS
+
+  C_PLUS
+  C
+  C_MINUS
+
+  D_PLUS
+  D
+  D_MINUS
+
+  F_PLUS
+  F
+  F_MINUS
+
+  INCOMPLETE
+  WITHDRAWN
+  NOT_SURE
+  OTHER
+}
+
+enum Tag {
+  TOUGH_GRADER
+  GET_READY_TO_READ
+  PARTICIPATION_MATTERS
+  EXTRA_CREDIT
+  GROUP_PROJECTS
+  AMAZING_LECTURES
+  CLEAR_GRADING_CRITERIA
+  GIVES_GOOD_FEEDBACK
+  INSPIRATIONAL
+  LOTS_OF_HOMEWORK
+  HILARIOUS
+  BEWARE_OF_POP_QUIZZES
+  SO_MANY_PAPERS
+  CARING
+  RESPECTED
+  LECTURE_HEAVY
+  GRADED_BY_FEW_THINGS
+  ACCESSIBLE_OUTSIDE_CLASS
+  ONLINE_SAVVY
+}
+
+type Review {
+  id: ID!
+  quality: Float!
+  difficulty: Float!
+  time: Time!
+  tags: [Tag!]!
+  grade: Grade!
+}
+
+input NewProfessor {
+  firstName: String!
+  lastName: String!
+  middleName: String
+}
+
+type Query {
+  professor(id: ID!): Professor
+  school(id: ID!): School
+  schools(after: String, first: Int = 25): SchoolConnection! @pagination(maxLength: 20) @goField(forceResolver: true)
+  professors(schoolId: ID!, after: String, first: Int = 25): ProfessorConnection! @pagination(maxLength: 20) @goField(forceResolver: true)
+}
+
+input NewSchool {
+  name: String!
+}
+
+type Mutation {
+  createSchool(input: NewSchool!): School!
+  createProfessor(schoolId: String!, input: NewProfessor!): Professor
+}
+
+#██████   █████   ██████  ██ ███    ██  █████  ████████ ██  ██████  ███    ██
+#██   ██ ██   ██ ██       ██ ████   ██ ██   ██    ██    ██ ██    ██ ████   ██
+#██████  ███████ ██   ███ ██ ██ ██  ██ ███████    ██    ██ ██    ██ ██ ██  ██
+#██      ██   ██ ██    ██ ██ ██  ██ ██ ██   ██    ██    ██ ██    ██ ██  ██ ██
+#██      ██   ██  ██████  ██ ██   ████ ██   ██    ██    ██  ██████  ██   ████
+
+# For more information regarding the connection model of pagination view:
+# https://graphql.org/learn/pagination/#complete-connection-model
+interface Connection {
+  # The total number of entries
+  totalCount: Int!
+  # Information for paginating this connection
+  pageInfo: PageInfo!
+}
+
+type PageInfo {
+  startCursor: String!
+  endCursor: String!
+
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type SchoolConnection implements Connection {
+  # Inherited fields from Connection
+  totalCount: Int!
+  pageInfo: PageInfo!
+
+  schools: [School!]!
+}
+
+type ProfessorConnection implements Connection {
+  # Inherited fields from Connection
+  totalCount: Int!
+  pageInfo: PageInfo!
+
+  professors: [Professor!]!
+}
+
+type ReviewConnection implements Connection {
+  # Inherited fields from Connection
+  totalCount: Int!
+  pageInfo: PageInfo!
+
+  reviews: [Review!]!
+}

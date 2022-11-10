@@ -1,0 +1,28 @@
+services:
+  backend:
+    depends_on:
+      - postgres
+    build:
+      dockerfile: ./Dockerfile
+    #env_file: [ .env ]
+    environment:
+      GIN_MODE: "debug"
+      TRUSTED_PROXIES: ""
+      DATABASE_URI: "postgresql://postgres:test@postgres:5432/postgres"
+    volumes:
+      - ./testing/email-templates:/etc/config
+  postgres:
+    image: "postgres:15-alpine"
+    restart: always
+    command: [ "postgres", "-c", "log_statement=all" ]
+    environment:
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./testing/postgres/init.sql:/docker-entrypoint-initdb.d/db.sql
+      - ./postgres-data:/var/lib/postgresql/data
+      - ./postgres-logs:/logs:z
+volumes:
+  postgres-data:
+  postgres-logs:
