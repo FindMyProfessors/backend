@@ -37,9 +37,28 @@ func (r *Repository) GetCourseById(ctx context.Context, id string) (course *mode
 	return course, err
 }
 
-func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string) ([]*string, error) {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string) (courseCodes []*string, err error) {
+	courseCodes = []*string{}
+
+	sql := `SELECT code FROM courses WHERE school_id = $1 ORDER BY code DESC`
+
+	rows, err := r.DatabasePool.Query(ctx, sql, id)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var code string
+		err = rows.Scan(&code)
+		if err != nil {
+			return nil, err
+		}
+		courseCodes = append(courseCodes, &code)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return courseCodes, err
 }
 
 func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first int, after *string) (reviews []*model.Course, total int, err error) {

@@ -13,7 +13,7 @@ type Repository interface {
 	CreateReview(ctx context.Context, schoolID string, input *model.NewReview) (course *model.Review, err error)
 
 	// School Type
-	GetCourseCodesBySchool(ctx context.Context, id string) ([]*string, error)
+	GetCourseCodesBySchool(ctx context.Context, id string) (courseCodes []*string, err error)
 	GetCoursesBySchool(ctx context.Context, id string, first int, after *string) (courses []*model.Course, total int, err error)
 	GetProfessorsBySchool(ctx context.Context, id string, first int, after *string) (courses []*model.Professor, total int, err error)
 	GetSchoolById(ctx context.Context, id string) (school *model.School, err error)
