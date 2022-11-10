@@ -6,8 +6,19 @@ import (
 )
 
 func (r *Repository) CreateCourse(ctx context.Context, schoolID string, input *model.NewCourse) (course *model.Course, err error) {
-	//TODO implement me
-	panic("implement me")
+	course = &model.Course{
+		Name: input.Name,
+		Code: input.Code,
+	}
+
+	sql := `INSERT INTO courses (name, code, school_id) VALUES ($1, $2, $3) RETURNING id`
+
+	err = r.DatabasePool.QueryRow(ctx, sql, input.Name, input.Code, schoolID).Scan(course.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return course, err
 }
 
 func (r *Repository) GetCourseById(ctx context.Context, id string) (course *model.Course, err error) {
