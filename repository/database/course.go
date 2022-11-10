@@ -5,6 +5,7 @@ import (
 	"github.com/FindMyProfessors/backend/graph/model"
 )
 
+// Adds the course and its attributes to the database with the SQL insert command.
 func (r *Repository) CreateCourse(ctx context.Context, schoolID string, input *model.NewCourse) (course *model.Course, err error) {
 	course = &model.Course{
 		Name:     input.Name,
@@ -22,6 +23,7 @@ func (r *Repository) CreateCourse(ctx context.Context, schoolID string, input *m
 	return course, err
 }
 
+// Gets the course with the given id from the database with the SQL select command.
 func (r *Repository) GetCourseById(ctx context.Context, id string) (course *model.Course, err error) {
 	course = &model.Course{
 		ID: id,
@@ -41,7 +43,7 @@ func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string) (cou
 	courseCodes = []*string{}
 
 	sql := `SELECT code FROM courses WHERE school_id = $1 ORDER BY code DESC`
-
+  
 	rows, err := r.DatabasePool.Query(ctx, sql, id)
 	if err != nil {
 		return nil, err
