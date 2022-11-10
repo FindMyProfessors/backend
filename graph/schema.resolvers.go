@@ -16,7 +16,7 @@ func (r *courseResolver) School(ctx context.Context, obj *model.Course) (*model.
 
 // TaughtBy is the resolver for the taughtBy field.
 func (r *courseResolver) TaughtBy(ctx context.Context, obj *model.Course, first int, after *string) (*model.ProfessorConnection, error) {
-	professors, total, err := r.Repository.GetProfessorsByCourse(ctx, obj.ID, first, after)
+	professors, total, err := r.Repository.GetProfessorsByCourse(ctx, obj, first, after)
 	if err != nil {
 		return nil, err
 	}
