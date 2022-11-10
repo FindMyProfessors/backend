@@ -7,8 +7,9 @@ import (
 
 func (r *Repository) CreateCourse(ctx context.Context, schoolID string, input *model.NewCourse) (course *model.Course, err error) {
 	course = &model.Course{
-		Name: input.Name,
-		Code: input.Code,
+		Name:     input.Name,
+		Code:     input.Code,
+		SchoolID: schoolID,
 	}
 
 	sql := `INSERT INTO courses (name, code, school_id) VALUES ($1, $2, $3) RETURNING id`
