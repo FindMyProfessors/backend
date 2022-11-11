@@ -33,6 +33,7 @@ type Repository interface {
 
 	// Edge Case Mutations
 	MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string, input *model.NewProfessor) (professor *model.Professor, err error)
+	RegisterProfessorForCourse(ctx context.Context, courseID string, professorID string, term *model.TermInput) error
 
 	GetSchools(ctx context.Context, first int, after *string) (schools []*model.School, total int, err error)
 }

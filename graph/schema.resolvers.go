@@ -6,7 +6,6 @@ package graph
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
 
 	"github.com/FindMyProfessors/backend/analysis"
@@ -59,7 +58,9 @@ func (r *mutationResolver) CreateReview(ctx context.Context, professorID string,
 
 // RegisterProfessorForCourse is the resolver for the registerProfessorForCourse field.
 func (r *mutationResolver) RegisterProfessorForCourse(ctx context.Context, courseID string, professorID string, term model.TermInput) (bool, error) {
-	panic(fmt.Errorf("not implemented"))
+	err := r.Repository.RegisterProfessorForCourse(ctx, courseID, professorID, &term)
+
+	return err != nil, err
 }
 
 // MergeProfessor is the resolver for the mergeProfessor field.
