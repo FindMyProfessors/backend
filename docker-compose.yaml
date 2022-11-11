@@ -8,6 +8,8 @@ services:
       GIN_MODE: "debug"
       TRUSTED_PROXIES: ""
       DATABASE_URI: "postgresql://postgres:test@postgres:5432/postgres"
+    ports:
+      - "8080:8080"
   postgres:
     image: "postgres:15-alpine"
     restart: always
