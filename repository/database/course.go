@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/FindMyProfessors/backend/graph/model"
 	"github.com/jackc/pgx/v5"
+	"strconv"
 )
 
 // Adds the course and its attributes to the database with the SQL insert command.
@@ -16,10 +17,13 @@ func (r *Repository) CreateCourse(ctx context.Context, schoolID string, input *m
 
 	sql := `INSERT INTO courses (name, code, school_id) VALUES ($1, $2, $3) RETURNING id`
 
-	err = r.DatabasePool.QueryRow(ctx, sql, input.Name, input.Code, schoolID).Scan(course.ID)
+	var intId int
+	err = r.DatabasePool.QueryRow(ctx, sql, input.Name, input.Code, schoolID).Scan(&intId)
 	if err != nil {
 		return nil, err
 	}
+
+	course.ID = strconv.Itoa(intId)
 
 	return course, err
 }
@@ -83,10 +87,12 @@ func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first
 
 		for rows.Next() {
 			var course model.Course
-			err = rows.Scan(&course.ID, &course.Name, &course.Code, &course.SchoolID)
+			var intId int
+			err = rows.Scan(&intId, &course.Name, &course.Code, &course.SchoolID)
 			if err != nil {
 				return err
 			}
+			course.ID = strconv.Itoa(intId)
 			courses = append(courses, &course)
 		}
 
@@ -123,10 +129,12 @@ func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first in
 
 		for rows.Next() {
 			var course model.Course
-			err = rows.Scan(&course.ID, &course.Name, &course.Code, &course.SchoolID)
+			var intId int
+			err = rows.Scan(&intId, &course.Name, &course.Code, &course.SchoolID)
 			if err != nil {
 				return err
 			}
+			course.ID = strconv.Itoa(intId)
 			courses = append(courses, &course)
 		}
 
