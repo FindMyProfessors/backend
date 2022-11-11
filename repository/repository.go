@@ -20,6 +20,7 @@ type Repository interface {
 
 	// Professor Type
 	GetReviewsByProfessor(ctx context.Context, id string, first int, after *string) (reviews []*model.Review, total int, err error)
+	GetTopKReviewsByProfessor(ctx context.Context, id string, topK float64) (reviews []*model.Review, total int, err error)
 	GetCoursesByProfessor(ctx context.Context, id string, first int, after *string) (courses []*model.Course, total int, err error)
 	GetProfessorById(ctx context.Context, id string) (professor *model.Professor, err error)
 

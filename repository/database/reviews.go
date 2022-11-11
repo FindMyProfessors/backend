@@ -62,10 +62,51 @@ func (r *Repository) GetReviewsByProfessor(ctx context.Context, id string, first
 			reviews = append(reviews, &review)
 		}
 
+		if first == MaxBatchReviewRetrieval {
+			total = len(reviews)
+		} else {
+			err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE professor_id = $1`, id).Scan(&total)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return reviews, total, nil
+}
+
+func (r *Repository) GetTopKReviewsByProfessor(ctx context.Context, id string, topK float64) (reviews []*model.Review, total int, err error) {
+
+	sql := `SELECT reviews.id, reviews.quality, reviews.difficulty, reviews.time, reviews.tags, reviews.grade FROM reviews WHERE professor_id = $1 ORDER BY time DESC LIMIT $2`
+
+	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE professor_id = $1`, id).Scan(&total)
 		if err != nil {
 			return err
 		}
+
+		topKTotal := int(float64(total) * (1 - topK))
+
+		rows, err := tx.Query(ctx, sql, id, topKTotal)
+		if err != nil {
+			return err
+		}
+
+		for rows.Next() {
+			var review model.Review
+			var intId int
+			err = rows.Scan(&review.ID, &review.Quality, &review.Difficulty, &review.Time, &review.Tags, &review.Grade)
+			if err != nil {
+				return err
+			}
+			review.ID = strconv.Itoa(intId)
+			reviews = append(reviews, &review)
+		}
+
 		return nil
 	})
 	if err != nil {

@@ -5,8 +5,10 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/FindMyProfessors/backend/analysis"
+	"math"
 
 	"github.com/FindMyProfessors/backend/graph/generated"
 	"github.com/FindMyProfessors/backend/graph/model"
@@ -67,7 +69,69 @@ func (r *professorResolver) Linked(ctx context.Context, obj *model.Professor) (b
 
 // Rating is the resolver for the rating field.
 func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, topKpercentage *float64) (*model.Rating, error) {
-	panic(fmt.Errorf("not implemented"))
+	// TODO: Implement cache
+	var err error
+
+	reviews, total, err := r.Repository.GetReviewsByProfessor(ctx, obj.ID, -1, nil)
+	if err != nil {
+		return nil, err
+	}
+	m := &model.Rating{
+		RatingAmount: total,
+	}
+
+	var topKTotal int
+
+	if topKpercentage != nil {
+		if *topKpercentage > 1.0 {
+			return nil, errors.New("topKpercentage must be in (0, 1]")
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		topKTotal = int(float64(total) * (1 - *topKpercentage))
+	}
+
+	totalQualitySum := 0.0
+	totalDifficultySum := 0.0
+
+	topKQualitySum := 0.0
+	topKDifficultySum := 0.0
+
+	// TODO: check where the -1 needs to be
+	topKStartIndex := int(math.Abs(float64(topKTotal - total - 1)))
+
+	totalGrades := 0
+	gradeIndexSum := 0
+
+	for i, review := range reviews {
+		totalQualitySum += review.Quality
+		totalDifficultySum += review.Difficulty
+
+		if topKpercentage != nil {
+			if i > topKStartIndex {
+				topKQualitySum += review.Quality
+				topKDifficultySum += review.Difficulty
+			}
+		}
+
+		index := review.Grade.GradeIndex()
+		if index != -1 {
+			gradeIndexSum += index
+			totalGrades++
+		}
+	}
+
+	m.AverageGrade = model.AllGrade[gradeIndexSum/totalGrades]
+
+	m.TopKMostRecentDifficultyAverage = topKDifficultySum / float64(topKTotal)
+	m.TopKMostRecentQualityAverage = topKQualitySum / float64(topKTotal)
+
+	m.TotalQualityAverage = totalQualitySum / float64(total)
+	m.TotalDifficultyAverage = totalDifficultySum / float64(total)
+
+	return m, nil
 }
 
 // Analysis is the resolver for the analysis field.
