@@ -92,7 +92,7 @@ func (r *Repository) GetSchools(ctx context.Context, first int, after *string) (
 		}
 		return nil
 	})
-	
+
 	if err != nil {
 		return nil, 0, err
 	}
