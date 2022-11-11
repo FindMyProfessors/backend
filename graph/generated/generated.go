@@ -50,8 +50,9 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	ChartValue struct {
-		Date  func(childComplexity int) int
+		Month func(childComplexity int) int
 		Value func(childComplexity int) int
+		Year  func(childComplexity int) int
 	}
 
 	Course struct {
@@ -203,12 +204,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "ChartValue.date":
-		if e.complexity.ChartValue.Date == nil {
+	case "ChartValue.month":
+		if e.complexity.ChartValue.Month == nil {
 			break
 		}
 
-		return e.complexity.ChartValue.Date(childComplexity), true
+		return e.complexity.ChartValue.Month(childComplexity), true
 
 	case "ChartValue.value":
 		if e.complexity.ChartValue.Value == nil {
@@ -216,6 +217,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ChartValue.Value(childComplexity), true
+
+	case "ChartValue.year":
+		if e.complexity.ChartValue.Year == nil {
+			break
+		}
+
+		return e.complexity.ChartValue.Year(childComplexity), true
 
 	case "Course.code":
 		if e.complexity.Course.Code == nil {
@@ -837,7 +845,8 @@ type TagAmount {
 
 type ChartValue {
     value: Float!
-    date: RFC3339Time!
+    month: String!
+    year: Int!
 }
 
 type ProfessorAnalysis {
@@ -1467,8 +1476,8 @@ func (ec *executionContext) fieldContext_ChartValue_value(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _ChartValue_date(ctx context.Context, field graphql.CollectedField, obj *model.ChartValue) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ChartValue_date(ctx, field)
+func (ec *executionContext) _ChartValue_month(ctx context.Context, field graphql.CollectedField, obj *model.ChartValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ChartValue_month(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1481,7 +1490,7 @@ func (ec *executionContext) _ChartValue_date(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Date, nil
+		return obj.Month, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1493,19 +1502,63 @@ func (ec *executionContext) _ChartValue_date(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNRFC3339Time2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ChartValue_date(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ChartValue_month(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ChartValue",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type RFC3339Time does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChartValue_year(ctx context.Context, field graphql.CollectedField, obj *model.ChartValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ChartValue_year(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Year, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ChartValue_year(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChartValue",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3064,8 +3117,10 @@ func (ec *executionContext) fieldContext_ProfessorAnalysis_averageRatingValues(c
 			switch field.Name {
 			case "value":
 				return ec.fieldContext_ChartValue_value(ctx, field)
-			case "date":
-				return ec.fieldContext_ChartValue_date(ctx, field)
+			case "month":
+				return ec.fieldContext_ChartValue_month(ctx, field)
+			case "year":
+				return ec.fieldContext_ChartValue_year(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ChartValue", field.Name)
 		},
@@ -6909,9 +6964,16 @@ func (ec *executionContext) _ChartValue(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "date":
+		case "month":
 
-			out.Values[i] = ec._ChartValue_date(ctx, field, obj)
+			out.Values[i] = ec._ChartValue_month(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "year":
+
+			out.Values[i] = ec._ChartValue_year(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

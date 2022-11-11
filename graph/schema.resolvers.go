@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"github.com/FindMyProfessors/backend/analysis"
 
 	"github.com/FindMyProfessors/backend/graph/generated"
 	"github.com/FindMyProfessors/backend/graph/model"
@@ -71,7 +72,12 @@ func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, to
 
 // Analysis is the resolver for the analysis field.
 func (r *professorResolver) Analysis(ctx context.Context, obj *model.Professor) (*model.ProfessorAnalysis, error) {
-	panic(fmt.Errorf("not implemented"))
+	reviews, _, err := r.Repository.GetReviewsByProfessor(ctx, obj.ID, -1, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.BeginAnalysis(reviews)
 }
 
 // School is the resolver for the school field.

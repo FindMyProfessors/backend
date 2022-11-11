@@ -14,8 +14,9 @@ type Connection interface {
 }
 
 type ChartValue struct {
-	Value float64   `json:"value"`
-	Date  time.Time `json:"date"`
+	Value float64 `json:"value"`
+	Month string  `json:"month"`
+	Year  int     `json:"year"`
 }
 
 type CourseConnection struct {

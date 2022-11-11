@@ -51,7 +51,8 @@ type TagAmount {
 
 type ChartValue {
     value: Float!
-    date: RFC3339Time!
+    month: String!
+    year: Int!
 }
 
 type ProfessorAnalysis {

@@ -7,6 +7,10 @@ import (
 	"strconv"
 )
 
+const (
+	MaxBatchReviewRetrieval = 1000
+)
+
 // CreateReview Adds the review and its attributes to the database (associated with a professor_id) with the SQL insert command.
 func (r *Repository) CreateReview(ctx context.Context, schoolID string, input *model.NewReview) (review *model.Review, err error) {
 	review = &model.Review{
@@ -30,6 +34,9 @@ func (r *Repository) CreateReview(ctx context.Context, schoolID string, input *m
 func (r *Repository) GetReviewsByProfessor(ctx context.Context, id string, first int, after *string) (reviews []*model.Review, total int, err error) {
 	var sql string
 	var variables []any
+	if first == -1 {
+		first = MaxBatchReviewRetrieval
+	}
 	if after != nil {
 		sql = `SELECT reviews.id, reviews.quality, reviews.difficulty, reviews.time, reviews.tags, reviews.grade FROM reviews WHERE professor_id = $1 AND id > $2 ORDER BY id LIMIT $3`
 		variables = []any{id, *after, first}
