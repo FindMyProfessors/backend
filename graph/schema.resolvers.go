@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"github.com/FindMyProfessors/backend/pagination"
 
 	"github.com/FindMyProfessors/backend/graph/generated"
 	"github.com/FindMyProfessors/backend/graph/model"
@@ -18,14 +19,19 @@ func (r *courseResolver) School(ctx context.Context, obj *model.Course) (*model.
 
 // TaughtBy is the resolver for the taughtBy field.
 func (r *courseResolver) TaughtBy(ctx context.Context, obj *model.Course, first int, after *string) (*model.ProfessorConnection, error) {
-	professors, total, err := r.Repository.GetProfessorsByCourse(ctx, obj, first, after)
+	if after != nil {
+		cursor, err := pagination.DecodeCursor(after)
+		if err != nil {
+			return nil, err
+		}
+		after = &cursor
+	}
+	professors, total, err := r.Repository.GetProfessorsByCourse(ctx, obj.ID, first, after)
 	if err != nil {
 		return nil, err
 	}
-	var connection model.ProfessorConnection
-	// TODO: Implement Pagination
 
-	return &connection, nil
+	return &model.ProfessorConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(professors[0].ID, professors[len(professors)-1].ID)}, nil
 }
 
 // CreateSchool is the resolver for the createSchool field.
@@ -75,26 +81,36 @@ func (r *professorResolver) School(ctx context.Context, obj *model.Professor) (*
 
 // Reviews is the resolver for the reviews field.
 func (r *professorResolver) Reviews(ctx context.Context, obj *model.Professor, first int, after *string) (*model.ReviewConnection, error) {
+	if after != nil {
+		cursor, err := pagination.DecodeCursor(after)
+		if err != nil {
+			return nil, err
+		}
+		after = &cursor
+	}
 	reviews, total, err := r.Repository.GetReviewsByProfessor(ctx, obj.ID, first, after)
 	if err != nil {
 		return nil, err
 	}
-	var connection model.ReviewConnection
-	// TODO: Implement Pagination
 
-	return &connection, nil
+	return &model.ReviewConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(reviews[0].ID, reviews[len(reviews)-1].ID)}, nil
 }
 
 // Teaches is the resolver for the teaches field.
 func (r *professorResolver) Teaches(ctx context.Context, obj *model.Professor, first int, after *string) (*model.CourseConnection, error) {
+	if after != nil {
+		cursor, err := pagination.DecodeCursor(after)
+		if err != nil {
+			return nil, err
+		}
+		after = &cursor
+	}
 	courses, total, err := r.Repository.GetCoursesByProfessor(ctx, obj.ID, first, after)
 	if err != nil {
 		return nil, err
 	}
-	var connection model.CourseConnection
-	// TODO: Implement Pagination
 
-	return &connection, nil
+	return &model.CourseConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(courses[0].ID, courses[len(courses)-1].ID)}, nil
 }
 
 // Professor is the resolver for the professor field.
@@ -109,26 +125,36 @@ func (r *queryResolver) School(ctx context.Context, id string) (*model.School, e
 
 // Schools is the resolver for the schools field.
 func (r *queryResolver) Schools(ctx context.Context, first int, after *string) (*model.SchoolConnection, error) {
+	if after != nil {
+		cursor, err := pagination.DecodeCursor(after)
+		if err != nil {
+			return nil, err
+		}
+		after = &cursor
+	}
 	schools, total, err := r.Repository.GetSchools(ctx, first, after)
 	if err != nil {
 		return nil, err
 	}
-	var connection model.SchoolConnection
-	// TODO: Implement Pagination
 
-	return &connection, nil
+	return &model.SchoolConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(schools[0].ID, schools[len(schools)-1].ID)}, nil
 }
 
 // Professors is the resolver for the professors field.
 func (r *queryResolver) Professors(ctx context.Context, schoolID string, first int, after *string) (*model.ProfessorConnection, error) {
+	if after != nil {
+		cursor, err := pagination.DecodeCursor(after)
+		if err != nil {
+			return nil, err
+		}
+		after = &cursor
+	}
 	professors, total, err := r.Repository.GetProfessorsBySchool(ctx, schoolID, first, after)
 	if err != nil {
 		return nil, err
 	}
-	var connection model.ProfessorConnection
-	// TODO: Implement Pagination
 
-	return &connection, nil
+	return &model.ProfessorConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(professors[0].ID, professors[len(professors)-1].ID)}, nil
 }
 
 // CourseCodes is the resolver for the courseCodes field.
@@ -142,26 +168,36 @@ func (r *schoolResolver) CourseCodes(ctx context.Context, obj *model.School) ([]
 
 // Courses is the resolver for the courses field.
 func (r *schoolResolver) Courses(ctx context.Context, obj *model.School, first int, after *string) (*model.CourseConnection, error) {
+	if after != nil {
+		cursor, err := pagination.DecodeCursor(after)
+		if err != nil {
+			return nil, err
+		}
+		after = &cursor
+	}
 	courses, total, err := r.Repository.GetCoursesBySchool(ctx, obj.ID, first, after)
 	if err != nil {
 		return nil, err
 	}
-	var connection model.CourseConnection
-	// TODO: Implement Pagination
 
-	return &connection, nil
+	return &model.CourseConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(courses[0].ID, courses[len(courses)-1].ID)}, nil
 }
 
 // Professors is the resolver for the professors field.
 func (r *schoolResolver) Professors(ctx context.Context, obj *model.School, first int, after *string) (*model.ProfessorConnection, error) {
+	if after != nil {
+		cursor, err := pagination.DecodeCursor(after)
+		if err != nil {
+			return nil, err
+		}
+		after = &cursor
+	}
 	professors, total, err := r.Repository.GetProfessorsBySchool(ctx, obj.ID, first, after)
 	if err != nil {
 		return nil, err
 	}
-	var connection model.ProfessorConnection
-	// TODO: Implement Pagination
 
-	return &connection, nil
+	return &model.ProfessorConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(professors[0].ID, professors[len(professors)-1].ID)}, nil
 }
 
 // Course returns generated.CourseResolver implementation.
