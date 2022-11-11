@@ -13,6 +13,11 @@ type Connection interface {
 	IsConnection()
 }
 
+type ChartValue struct {
+	Value float64   `json:"value"`
+	Date  time.Time `json:"date"`
+}
+
 type CourseConnection struct {
 	TotalCount int       `json:"totalCount"`
 	PageInfo   *PageInfo `json:"pageInfo"`
@@ -51,14 +56,9 @@ type PageInfo struct {
 	HasNextPage     bool   `json:"hasNextPage"`
 }
 
-type Professor struct {
-	ID         string            `json:"id"`
-	FirstName  string            `json:"firstName"`
-	LastName   string            `json:"lastName"`
-	MiddleName *string           `json:"middleName"`
-	Tags       []Tag             `json:"tags"`
-	Reviews    *ReviewConnection `json:"reviews"`
-	Teaches    *CourseConnection `json:"teaches"`
+type ProfessorAnalysis struct {
+	TagAmount           []*TagAmount  `json:"tagAmount"`
+	AverageRatingValues []*ChartValue `json:"averageRatingValues"`
 }
 
 type ProfessorConnection struct {
@@ -68,6 +68,15 @@ type ProfessorConnection struct {
 }
 
 func (ProfessorConnection) IsConnection() {}
+
+type Rating struct {
+	RatingAmount                    int     `json:"ratingAmount"`
+	TotalQualityAverage             float64 `json:"totalQualityAverage"`
+	TopKMostRecentQualityAverage    float64 `json:"topKMostRecentQualityAverage"`
+	TotalDifficultyAverage          float64 `json:"totalDifficultyAverage"`
+	TopKMostRecentDifficultyAverage float64 `json:"topKMostRecentDifficultyAverage"`
+	AverageGrade                    Grade   `json:"averageGrade"`
+}
 
 type Review struct {
 	ID         string    `json:"id"`
@@ -102,6 +111,11 @@ type SchoolConnection struct {
 }
 
 func (SchoolConnection) IsConnection() {}
+
+type TagAmount struct {
+	Tag    Tag `json:"tag"`
+	Amount int `json:"amount"`
+}
 
 type Grade string
 

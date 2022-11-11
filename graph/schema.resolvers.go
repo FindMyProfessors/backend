@@ -5,6 +5,8 @@ package graph
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/FindMyProfessors/backend/graph/generated"
 	"github.com/FindMyProfessors/backend/graph/model"
 )
@@ -49,6 +51,21 @@ func (r *mutationResolver) CreateReview(ctx context.Context, professorID string,
 // MergeProfessor is the resolver for the mergeProfessor field.
 func (r *mutationResolver) MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string) (*model.Professor, error) {
 	return r.Repository.MergeProfessor(ctx, schoolProfessorID, rmpProfessorID)
+}
+
+// Rating is the resolver for the rating field.
+func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, topKpercentage *float64) (*model.Rating, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+// Analysis is the resolver for the analysis field.
+func (r *professorResolver) Analysis(ctx context.Context, obj *model.Professor) (*model.ProfessorAnalysis, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+// School is the resolver for the school field.
+func (r *professorResolver) School(ctx context.Context, obj *model.Professor) (*model.School, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Reviews is the resolver for the reviews field.

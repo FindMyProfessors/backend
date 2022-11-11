@@ -49,6 +49,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ChartValue struct {
+		Date  func(childComplexity int) int
+		Value func(childComplexity int) int
+	}
+
 	Course struct {
 		Code     func(childComplexity int) int
 		ID       func(childComplexity int) int
@@ -79,13 +84,19 @@ type ComplexityRoot struct {
 	}
 
 	Professor struct {
-		FirstName  func(childComplexity int) int
-		ID         func(childComplexity int) int
-		LastName   func(childComplexity int) int
-		MiddleName func(childComplexity int) int
-		Reviews    func(childComplexity int, first int, after *string) int
-		Tags       func(childComplexity int) int
-		Teaches    func(childComplexity int, first int, after *string) int
+		Analysis  func(childComplexity int) int
+		FirstName func(childComplexity int) int
+		ID        func(childComplexity int) int
+		LastName  func(childComplexity int) int
+		Rating    func(childComplexity int, topKpercentage *float64) int
+		Reviews   func(childComplexity int, first int, after *string) int
+		School    func(childComplexity int) int
+		Teaches   func(childComplexity int, first int, after *string) int
+	}
+
+	ProfessorAnalysis struct {
+		AverageRatingValues func(childComplexity int) int
+		TagAmount           func(childComplexity int) int
 	}
 
 	ProfessorConnection struct {
@@ -99,6 +110,15 @@ type ComplexityRoot struct {
 		Professors func(childComplexity int, schoolID string, first int, after *string) int
 		School     func(childComplexity int, id string) int
 		Schools    func(childComplexity int, first int, after *string) int
+	}
+
+	Rating struct {
+		AverageGrade                    func(childComplexity int) int
+		RatingAmount                    func(childComplexity int) int
+		TopKMostRecentDifficultyAverage func(childComplexity int) int
+		TopKMostRecentQualityAverage    func(childComplexity int) int
+		TotalDifficultyAverage          func(childComplexity int) int
+		TotalQualityAverage             func(childComplexity int) int
 	}
 
 	Review struct {
@@ -129,6 +149,11 @@ type ComplexityRoot struct {
 		Schools    func(childComplexity int) int
 		TotalCount func(childComplexity int) int
 	}
+
+	TagAmount struct {
+		Amount func(childComplexity int) int
+		Tag    func(childComplexity int) int
+	}
 }
 
 type CourseResolver interface {
@@ -143,6 +168,9 @@ type MutationResolver interface {
 	MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string) (*model.Professor, error)
 }
 type ProfessorResolver interface {
+	Rating(ctx context.Context, obj *model.Professor, topKpercentage *float64) (*model.Rating, error)
+	Analysis(ctx context.Context, obj *model.Professor) (*model.ProfessorAnalysis, error)
+	School(ctx context.Context, obj *model.Professor) (*model.School, error)
 	Reviews(ctx context.Context, obj *model.Professor, first int, after *string) (*model.ReviewConnection, error)
 	Teaches(ctx context.Context, obj *model.Professor, first int, after *string) (*model.CourseConnection, error)
 }
@@ -172,6 +200,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "ChartValue.date":
+		if e.complexity.ChartValue.Date == nil {
+			break
+		}
+
+		return e.complexity.ChartValue.Date(childComplexity), true
+
+	case "ChartValue.value":
+		if e.complexity.ChartValue.Value == nil {
+			break
+		}
+
+		return e.complexity.ChartValue.Value(childComplexity), true
 
 	case "Course.code":
 		if e.complexity.Course.Code == nil {
@@ -322,6 +364,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
+	case "Professor.analysis":
+		if e.complexity.Professor.Analysis == nil {
+			break
+		}
+
+		return e.complexity.Professor.Analysis(childComplexity), true
+
 	case "Professor.firstName":
 		if e.complexity.Professor.FirstName == nil {
 			break
@@ -343,12 +392,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Professor.LastName(childComplexity), true
 
-	case "Professor.middleName":
-		if e.complexity.Professor.MiddleName == nil {
+	case "Professor.rating":
+		if e.complexity.Professor.Rating == nil {
 			break
 		}
 
-		return e.complexity.Professor.MiddleName(childComplexity), true
+		args, err := ec.field_Professor_rating_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Professor.Rating(childComplexity, args["topKPercentage"].(*float64)), true
 
 	case "Professor.reviews":
 		if e.complexity.Professor.Reviews == nil {
@@ -362,12 +416,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Professor.Reviews(childComplexity, args["first"].(int), args["after"].(*string)), true
 
-	case "Professor.tags":
-		if e.complexity.Professor.Tags == nil {
+	case "Professor.school":
+		if e.complexity.Professor.School == nil {
 			break
 		}
 
-		return e.complexity.Professor.Tags(childComplexity), true
+		return e.complexity.Professor.School(childComplexity), true
 
 	case "Professor.teaches":
 		if e.complexity.Professor.Teaches == nil {
@@ -380,6 +434,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Professor.Teaches(childComplexity, args["first"].(int), args["after"].(*string)), true
+
+	case "ProfessorAnalysis.averageRatingValues":
+		if e.complexity.ProfessorAnalysis.AverageRatingValues == nil {
+			break
+		}
+
+		return e.complexity.ProfessorAnalysis.AverageRatingValues(childComplexity), true
+
+	case "ProfessorAnalysis.tagAmount":
+		if e.complexity.ProfessorAnalysis.TagAmount == nil {
+			break
+		}
+
+		return e.complexity.ProfessorAnalysis.TagAmount(childComplexity), true
 
 	case "ProfessorConnection.pageInfo":
 		if e.complexity.ProfessorConnection.PageInfo == nil {
@@ -449,6 +517,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Schools(childComplexity, args["first"].(int), args["after"].(*string)), true
+
+	case "Rating.averageGrade":
+		if e.complexity.Rating.AverageGrade == nil {
+			break
+		}
+
+		return e.complexity.Rating.AverageGrade(childComplexity), true
+
+	case "Rating.ratingAmount":
+		if e.complexity.Rating.RatingAmount == nil {
+			break
+		}
+
+		return e.complexity.Rating.RatingAmount(childComplexity), true
+
+	case "Rating.topKMostRecentDifficultyAverage":
+		if e.complexity.Rating.TopKMostRecentDifficultyAverage == nil {
+			break
+		}
+
+		return e.complexity.Rating.TopKMostRecentDifficultyAverage(childComplexity), true
+
+	case "Rating.topKMostRecentQualityAverage":
+		if e.complexity.Rating.TopKMostRecentQualityAverage == nil {
+			break
+		}
+
+		return e.complexity.Rating.TopKMostRecentQualityAverage(childComplexity), true
+
+	case "Rating.totalDifficultyAverage":
+		if e.complexity.Rating.TotalDifficultyAverage == nil {
+			break
+		}
+
+		return e.complexity.Rating.TotalDifficultyAverage(childComplexity), true
+
+	case "Rating.totalQualityAverage":
+		if e.complexity.Rating.TotalQualityAverage == nil {
+			break
+		}
+
+		return e.complexity.Rating.TotalQualityAverage(childComplexity), true
 
 	case "Review.difficulty":
 		if e.complexity.Review.Difficulty == nil {
@@ -579,6 +689,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SchoolConnection.TotalCount(childComplexity), true
 
+	case "TagAmount.amount":
+		if e.complexity.TagAmount.Amount == nil {
+			break
+		}
+
+		return e.complexity.TagAmount.Amount(childComplexity), true
+
+	case "TagAmount.tag":
+		if e.complexity.TagAmount.Tag == nil {
+			break
+		}
+
+		return e.complexity.TagAmount.Tag(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -674,11 +798,41 @@ type Professor {
     id: ID!
     firstName: String!
     lastName: String!
-    middleName: String
 
-    tags: [Tag!]!
+    rating(topKPercentage: Float): Rating! @goField(forceResolver: true)
+
+    analysis: ProfessorAnalysis! @goField(forceResolver: true)
+
+    school: School! @goField(forceResolver: true)
     reviews(first: Int! = 50, after: String): ReviewConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
     teaches(first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+}
+
+type Rating {
+    ratingAmount: Int!
+
+    totalQualityAverage: Float!
+    topKMostRecentQualityAverage: Float!
+
+    totalDifficultyAverage: Float!
+    topKMostRecentDifficultyAverage: Float!
+
+    averageGrade: Grade!
+}
+
+type TagAmount {
+    tag: Tag!
+    amount: Int!
+}
+
+type ChartValue {
+    value: Float!
+    date: Time!
+}
+
+type ProfessorAnalysis {
+    tagAmount: [TagAmount!]!
+    averageRatingValues: [ChartValue!]
 }
 
 type Course {
@@ -997,6 +1151,21 @@ func (ec *executionContext) field_Mutation_mergeProfessor_args(ctx context.Conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Professor_rating_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *float64
+	if tmp, ok := rawArgs["topKPercentage"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topKPercentage"))
+		arg0, err = ec.unmarshalOFloat2ᚖfloat64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["topKPercentage"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Professor_reviews_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1232,6 +1401,94 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _ChartValue_value(ctx context.Context, field graphql.CollectedField, obj *model.ChartValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ChartValue_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ChartValue_value(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChartValue",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChartValue_date(ctx context.Context, field graphql.CollectedField, obj *model.ChartValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ChartValue_date(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Date, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ChartValue_date(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChartValue",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Course_id(ctx context.Context, field graphql.CollectedField, obj *model.Course) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Course_id(ctx, field)
@@ -1765,10 +2022,12 @@ func (ec *executionContext) fieldContext_Mutation_createProfessor(ctx context.Co
 				return ec.fieldContext_Professor_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Professor_lastName(ctx, field)
-			case "middleName":
-				return ec.fieldContext_Professor_middleName(ctx, field)
-			case "tags":
-				return ec.fieldContext_Professor_tags(ctx, field)
+			case "rating":
+				return ec.fieldContext_Professor_rating(ctx, field)
+			case "analysis":
+				return ec.fieldContext_Professor_analysis(ctx, field)
+			case "school":
+				return ec.fieldContext_Professor_school(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Professor_reviews(ctx, field)
 			case "teaches":
@@ -1963,10 +2222,12 @@ func (ec *executionContext) fieldContext_Mutation_mergeProfessor(ctx context.Con
 				return ec.fieldContext_Professor_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Professor_lastName(ctx, field)
-			case "middleName":
-				return ec.fieldContext_Professor_middleName(ctx, field)
-			case "tags":
-				return ec.fieldContext_Professor_tags(ctx, field)
+			case "rating":
+				return ec.fieldContext_Professor_rating(ctx, field)
+			case "analysis":
+				return ec.fieldContext_Professor_analysis(ctx, field)
+			case "school":
+				return ec.fieldContext_Professor_school(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Professor_reviews(ctx, field)
 			case "teaches":
@@ -2297,8 +2558,8 @@ func (ec *executionContext) fieldContext_Professor_lastName(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Professor_middleName(ctx context.Context, field graphql.CollectedField, obj *model.Professor) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Professor_middleName(ctx, field)
+func (ec *executionContext) _Professor_rating(ctx context.Context, field graphql.CollectedField, obj *model.Professor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Professor_rating(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2311,48 +2572,7 @@ func (ec *executionContext) _Professor_middleName(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MiddleName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Professor_middleName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Professor",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Professor_tags(ctx context.Context, field graphql.CollectedField, obj *model.Professor) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Professor_tags(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tags, nil
+		return ec.resolvers.Professor().Rating(rctx, obj, fc.Args["topKPercentage"].(*float64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2364,19 +2584,150 @@ func (ec *executionContext) _Professor_tags(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]model.Tag)
+	res := resTmp.(*model.Rating)
 	fc.Result = res
-	return ec.marshalNTag2ᚕgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐTagᚄ(ctx, field.Selections, res)
+	return ec.marshalNRating2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐRating(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Professor_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Professor_rating(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Professor",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Tag does not have child fields")
+			switch field.Name {
+			case "ratingAmount":
+				return ec.fieldContext_Rating_ratingAmount(ctx, field)
+			case "totalQualityAverage":
+				return ec.fieldContext_Rating_totalQualityAverage(ctx, field)
+			case "topKMostRecentQualityAverage":
+				return ec.fieldContext_Rating_topKMostRecentQualityAverage(ctx, field)
+			case "totalDifficultyAverage":
+				return ec.fieldContext_Rating_totalDifficultyAverage(ctx, field)
+			case "topKMostRecentDifficultyAverage":
+				return ec.fieldContext_Rating_topKMostRecentDifficultyAverage(ctx, field)
+			case "averageGrade":
+				return ec.fieldContext_Rating_averageGrade(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Rating", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Professor_rating_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Professor_analysis(ctx context.Context, field graphql.CollectedField, obj *model.Professor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Professor_analysis(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Professor().Analysis(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ProfessorAnalysis)
+	fc.Result = res
+	return ec.marshalNProfessorAnalysis2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorAnalysis(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Professor_analysis(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Professor",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "tagAmount":
+				return ec.fieldContext_ProfessorAnalysis_tagAmount(ctx, field)
+			case "averageRatingValues":
+				return ec.fieldContext_ProfessorAnalysis_averageRatingValues(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfessorAnalysis", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Professor_school(ctx context.Context, field graphql.CollectedField, obj *model.Professor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Professor_school(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Professor().School(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.School)
+	fc.Result = res
+	return ec.marshalNSchool2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐSchool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Professor_school(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Professor",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_School_id(ctx, field)
+			case "name":
+				return ec.fieldContext_School_name(ctx, field)
+			case "courseCodes":
+				return ec.fieldContext_School_courseCodes(ctx, field)
+			case "courses":
+				return ec.fieldContext_School_courses(ctx, field)
+			case "professors":
+				return ec.fieldContext_School_professors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type School", field.Name)
 		},
 	}
 	return fc, nil
@@ -2556,6 +2907,103 @@ func (ec *executionContext) fieldContext_Professor_teaches(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _ProfessorAnalysis_tagAmount(ctx context.Context, field graphql.CollectedField, obj *model.ProfessorAnalysis) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfessorAnalysis_tagAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TagAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TagAmount)
+	fc.Result = res
+	return ec.marshalNTagAmount2ᚕᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐTagAmountᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfessorAnalysis_tagAmount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfessorAnalysis",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "tag":
+				return ec.fieldContext_TagAmount_tag(ctx, field)
+			case "amount":
+				return ec.fieldContext_TagAmount_amount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TagAmount", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfessorAnalysis_averageRatingValues(ctx context.Context, field graphql.CollectedField, obj *model.ProfessorAnalysis) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfessorAnalysis_averageRatingValues(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageRatingValues, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ChartValue)
+	fc.Result = res
+	return ec.marshalOChartValue2ᚕᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐChartValueᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfessorAnalysis_averageRatingValues(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfessorAnalysis",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "value":
+				return ec.fieldContext_ChartValue_value(ctx, field)
+			case "date":
+				return ec.fieldContext_ChartValue_date(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ChartValue", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ProfessorConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ProfessorConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ProfessorConnection_totalCount(ctx, field)
 	if err != nil {
@@ -2699,10 +3147,12 @@ func (ec *executionContext) fieldContext_ProfessorConnection_professors(ctx cont
 				return ec.fieldContext_Professor_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Professor_lastName(ctx, field)
-			case "middleName":
-				return ec.fieldContext_Professor_middleName(ctx, field)
-			case "tags":
-				return ec.fieldContext_Professor_tags(ctx, field)
+			case "rating":
+				return ec.fieldContext_Professor_rating(ctx, field)
+			case "analysis":
+				return ec.fieldContext_Professor_analysis(ctx, field)
+			case "school":
+				return ec.fieldContext_Professor_school(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Professor_reviews(ctx, field)
 			case "teaches":
@@ -2756,10 +3206,12 @@ func (ec *executionContext) fieldContext_Query_professor(ctx context.Context, fi
 				return ec.fieldContext_Professor_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Professor_lastName(ctx, field)
-			case "middleName":
-				return ec.fieldContext_Professor_middleName(ctx, field)
-			case "tags":
-				return ec.fieldContext_Professor_tags(ctx, field)
+			case "rating":
+				return ec.fieldContext_Professor_rating(ctx, field)
+			case "analysis":
+				return ec.fieldContext_Professor_analysis(ctx, field)
+			case "school":
+				return ec.fieldContext_Professor_school(ctx, field)
 			case "reviews":
 				return ec.fieldContext_Professor_reviews(ctx, field)
 			case "teaches":
@@ -3144,6 +3596,270 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rating_ratingAmount(ctx context.Context, field graphql.CollectedField, obj *model.Rating) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rating_ratingAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RatingAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rating_ratingAmount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rating_totalQualityAverage(ctx context.Context, field graphql.CollectedField, obj *model.Rating) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rating_totalQualityAverage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalQualityAverage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rating_totalQualityAverage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rating_topKMostRecentQualityAverage(ctx context.Context, field graphql.CollectedField, obj *model.Rating) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rating_topKMostRecentQualityAverage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TopKMostRecentQualityAverage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rating_topKMostRecentQualityAverage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rating_totalDifficultyAverage(ctx context.Context, field graphql.CollectedField, obj *model.Rating) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rating_totalDifficultyAverage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalDifficultyAverage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rating_totalDifficultyAverage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rating_topKMostRecentDifficultyAverage(ctx context.Context, field graphql.CollectedField, obj *model.Rating) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rating_topKMostRecentDifficultyAverage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TopKMostRecentDifficultyAverage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rating_topKMostRecentDifficultyAverage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rating_averageGrade(ctx context.Context, field graphql.CollectedField, obj *model.Rating) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rating_averageGrade(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageGrade, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Grade)
+	fc.Result = res
+	return ec.marshalNGrade2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐGrade(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rating_averageGrade(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Grade does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4024,6 +4740,94 @@ func (ec *executionContext) fieldContext_SchoolConnection_schools(ctx context.Co
 				return ec.fieldContext_School_professors(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type School", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TagAmount_tag(ctx context.Context, field graphql.CollectedField, obj *model.TagAmount) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TagAmount_tag(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tag, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Tag)
+	fc.Result = res
+	return ec.marshalNTag2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐTag(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TagAmount_tag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TagAmount",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Tag does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TagAmount_amount(ctx context.Context, field graphql.CollectedField, obj *model.TagAmount) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TagAmount_amount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TagAmount_amount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TagAmount",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6015,6 +6819,41 @@ func (ec *executionContext) _Connection(ctx context.Context, sel ast.SelectionSe
 
 // region    **************************** object.gotpl ****************************
 
+var chartValueImplementors = []string{"ChartValue"}
+
+func (ec *executionContext) _ChartValue(ctx context.Context, sel ast.SelectionSet, obj *model.ChartValue) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, chartValueImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChartValue")
+		case "value":
+
+			out.Values[i] = ec._ChartValue_value(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "date":
+
+			out.Values[i] = ec._ChartValue_date(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var courseImplementors = []string{"Course"}
 
 func (ec *executionContext) _Course(ctx context.Context, sel ast.SelectionSet, obj *model.Course) graphql.Marshaler {
@@ -6276,17 +7115,66 @@ func (ec *executionContext) _Professor(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "middleName":
+		case "rating":
+			field := field
 
-			out.Values[i] = ec._Professor_middleName(ctx, field, obj)
-
-		case "tags":
-
-			out.Values[i] = ec._Professor_tags(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Professor_rating(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "analysis":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Professor_analysis(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "school":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Professor_school(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "reviews":
 			field := field
 
@@ -6327,6 +7215,38 @@ func (ec *executionContext) _Professor(ctx context.Context, sel ast.SelectionSet
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var professorAnalysisImplementors = []string{"ProfessorAnalysis"}
+
+func (ec *executionContext) _ProfessorAnalysis(ctx context.Context, sel ast.SelectionSet, obj *model.ProfessorAnalysis) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, professorAnalysisImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProfessorAnalysis")
+		case "tagAmount":
+
+			out.Values[i] = ec._ProfessorAnalysis_tagAmount(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "averageRatingValues":
+
+			out.Values[i] = ec._ProfessorAnalysis_averageRatingValues(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6497,6 +7417,69 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				return ec._Query___schema(ctx, field)
 			})
 
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ratingImplementors = []string{"Rating"}
+
+func (ec *executionContext) _Rating(ctx context.Context, sel ast.SelectionSet, obj *model.Rating) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ratingImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Rating")
+		case "ratingAmount":
+
+			out.Values[i] = ec._Rating_ratingAmount(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalQualityAverage":
+
+			out.Values[i] = ec._Rating_totalQualityAverage(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "topKMostRecentQualityAverage":
+
+			out.Values[i] = ec._Rating_topKMostRecentQualityAverage(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalDifficultyAverage":
+
+			out.Values[i] = ec._Rating_totalDifficultyAverage(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "topKMostRecentDifficultyAverage":
+
+			out.Values[i] = ec._Rating_topKMostRecentDifficultyAverage(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "averageGrade":
+
+			out.Values[i] = ec._Rating_averageGrade(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6735,6 +7718,41 @@ func (ec *executionContext) _SchoolConnection(ctx context.Context, sel ast.Selec
 		case "schools":
 
 			out.Values[i] = ec._SchoolConnection_schools(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var tagAmountImplementors = []string{"TagAmount"}
+
+func (ec *executionContext) _TagAmount(ctx context.Context, sel ast.SelectionSet, obj *model.TagAmount) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tagAmountImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TagAmount")
+		case "tag":
+
+			out.Values[i] = ec._TagAmount_tag(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "amount":
+
+			out.Values[i] = ec._TagAmount_amount(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -7083,6 +8101,16 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNChartValue2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐChartValue(ctx context.Context, sel ast.SelectionSet, v *model.ChartValue) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ChartValue(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNCourse2ᚕᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourseᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Course) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -7290,6 +8318,20 @@ func (ec *executionContext) marshalNProfessor2ᚖgithubᚗcomᚋFindMyProfessors
 	return ec._Professor(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNProfessorAnalysis2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorAnalysis(ctx context.Context, sel ast.SelectionSet, v model.ProfessorAnalysis) graphql.Marshaler {
+	return ec._ProfessorAnalysis(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProfessorAnalysis2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorAnalysis(ctx context.Context, sel ast.SelectionSet, v *model.ProfessorAnalysis) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ProfessorAnalysis(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNProfessorConnection2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorConnection(ctx context.Context, sel ast.SelectionSet, v model.ProfessorConnection) graphql.Marshaler {
 	return ec._ProfessorConnection(ctx, sel, &v)
 }
@@ -7302,6 +8344,20 @@ func (ec *executionContext) marshalNProfessorConnection2ᚖgithubᚗcomᚋFindMy
 		return graphql.Null
 	}
 	return ec._ProfessorConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRating2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐRating(ctx context.Context, sel ast.SelectionSet, v model.Rating) graphql.Marshaler {
+	return ec._Rating(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRating2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐRating(ctx context.Context, sel ast.SelectionSet, v *model.Rating) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Rating(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNReview2ᚕᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐReviewᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Review) graphql.Marshaler {
@@ -7554,6 +8610,60 @@ func (ec *executionContext) marshalNTag2ᚕgithubᚗcomᚋFindMyProfessorsᚋbac
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalNTagAmount2ᚕᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐTagAmountᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TagAmount) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTagAmount2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐTagAmount(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTagAmount2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐTagAmount(ctx context.Context, sel ast.SelectionSet, v *model.TagAmount) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TagAmount(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
@@ -7850,11 +8960,74 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalOChartValue2ᚕᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐChartValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ChartValue) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNChartValue2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐChartValue(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalOCourse2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourse(ctx context.Context, sel ast.SelectionSet, v *model.Course) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Course(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalFloatContext(*v)
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) marshalOProfessor2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessor(ctx context.Context, sel ast.SelectionSet, v *model.Professor) graphql.Marshaler {

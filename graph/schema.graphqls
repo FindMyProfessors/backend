@@ -21,11 +21,41 @@ type Professor {
     id: ID!
     firstName: String!
     lastName: String!
-    middleName: String
 
-    tags: [Tag!]!
+    rating(topKPercentage: Float): Rating! @goField(forceResolver: true)
+
+    analysis: ProfessorAnalysis! @goField(forceResolver: true)
+
+    school: School! @goField(forceResolver: true)
     reviews(first: Int! = 50, after: String): ReviewConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
     teaches(first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+}
+
+type Rating {
+    ratingAmount: Int!
+
+    totalQualityAverage: Float!
+    topKMostRecentQualityAverage: Float!
+
+    totalDifficultyAverage: Float!
+    topKMostRecentDifficultyAverage: Float!
+
+    averageGrade: Grade!
+}
+
+type TagAmount {
+    tag: Tag!
+    amount: Int!
+}
+
+type ChartValue {
+    value: Float!
+    date: Time!
+}
+
+type ProfessorAnalysis {
+    tagAmount: [TagAmount!]!
+    averageRatingValues: [ChartValue!]
 }
 
 type Course {

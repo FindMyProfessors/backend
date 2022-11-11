@@ -63,3 +63,5 @@ models:
       - github.com/99designs/gqlgen/graphql.Int32
   Course:
     model: github.com/FindMyProfessors/backend/graph/model.Course
+  Professor:
+    model: github.com/FindMyProfessors/backend/graph/model.Professor
