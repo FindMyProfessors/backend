@@ -5,14 +5,25 @@ directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITI
 
 directive @pagination(maxLength: Int!) on FIELD_DEFINITION
 
+enum Semester {
+    FALL
+    SPRING
+    SUMMER
+}
+
+input TermInput {
+    year: Int!
+    semester: Semester!
+}
+
 type School {
     id: ID!
     name: String!
     """
     Returns a list of professors that teach at this school
     """
-    courseCodes: [String]! @goField(forceResolver: true)
-    courses(first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    courseCodes(term: TermInput!, ): [String]! @goField(forceResolver: true)
+    courses(term: TermInput!, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
     professors(first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
 }
 
@@ -29,7 +40,7 @@ type Professor {
 
     school: School! @goField(forceResolver: true)
     reviews(first: Int! = 50, after: String): ReviewConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
-    teaches(first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    teaches(term: TermInput!, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
 }
 
 type Rating {
@@ -65,7 +76,7 @@ type Course {
     name: String!
     code: String!
     school: School @goField(forceResolver: true)
-    taughtBy(first: Int! = 50, after: String): ProfessorConnection @pagination(maxLength: 50) @goField(forceResolver: true)
+    taughtBy(term: TermInput!, first: Int! = 50, after: String): ProfessorConnection @pagination(maxLength: 50) @goField(forceResolver: true)
 }
 
 input NewCourse {
@@ -162,6 +173,7 @@ type Mutation {
     createProfessor(schoolId: ID!, input: NewProfessor!): Professor
     createCourse(schoolId: ID!, input: NewCourse!): Course
     createReview(professorId: ID!, input: NewReview!): Review
+    registerProfessorForCourse(courseId: ID!, professorId: ID!, term: TermInput!): Boolean!
     mergeProfessor(schoolProfessorId: ID!, rmpProfessorId: ID!, input: NewProfessor!): Professor
 }
 

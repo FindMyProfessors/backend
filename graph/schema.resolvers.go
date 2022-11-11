@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 
 	"github.com/FindMyProfessors/backend/analysis"
@@ -20,7 +21,7 @@ func (r *courseResolver) School(ctx context.Context, obj *model.Course) (*model.
 }
 
 // TaughtBy is the resolver for the taughtBy field.
-func (r *courseResolver) TaughtBy(ctx context.Context, obj *model.Course, first int, after *string) (*model.ProfessorConnection, error) {
+func (r *courseResolver) TaughtBy(ctx context.Context, obj *model.Course, term model.TermInput, first int, after *string) (*model.ProfessorConnection, error) {
 	if after != nil {
 		cursor, err := pagination.DecodeCursor(after)
 		if err != nil {
@@ -54,6 +55,11 @@ func (r *mutationResolver) CreateCourse(ctx context.Context, schoolID string, in
 // CreateReview is the resolver for the createReview field.
 func (r *mutationResolver) CreateReview(ctx context.Context, professorID string, input model.NewReview) (*model.Review, error) {
 	return r.Repository.CreateReview(ctx, professorID, &input)
+}
+
+// RegisterProfessorForCourse is the resolver for the registerProfessorForCourse field.
+func (r *mutationResolver) RegisterProfessorForCourse(ctx context.Context, courseID string, professorID string, term model.TermInput) (bool, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // MergeProfessor is the resolver for the mergeProfessor field.
@@ -169,7 +175,7 @@ func (r *professorResolver) Reviews(ctx context.Context, obj *model.Professor, f
 }
 
 // Teaches is the resolver for the teaches field.
-func (r *professorResolver) Teaches(ctx context.Context, obj *model.Professor, first int, after *string) (*model.CourseConnection, error) {
+func (r *professorResolver) Teaches(ctx context.Context, obj *model.Professor, term model.TermInput, first int, after *string) (*model.CourseConnection, error) {
 	if after != nil {
 		cursor, err := pagination.DecodeCursor(after)
 		if err != nil {
@@ -235,7 +241,7 @@ func (r *queryResolver) Professors(ctx context.Context, schoolID string, first i
 }
 
 // CourseCodes is the resolver for the courseCodes field.
-func (r *schoolResolver) CourseCodes(ctx context.Context, obj *model.School) ([]*string, error) {
+func (r *schoolResolver) CourseCodes(ctx context.Context, obj *model.School, term model.TermInput) ([]*string, error) {
 	courseCodes, err := r.Repository.GetCourseCodesBySchool(ctx, obj.ID)
 	if err != nil {
 		return nil, err
@@ -244,7 +250,7 @@ func (r *schoolResolver) CourseCodes(ctx context.Context, obj *model.School) ([]
 }
 
 // Courses is the resolver for the courses field.
-func (r *schoolResolver) Courses(ctx context.Context, obj *model.School, first int, after *string) (*model.CourseConnection, error) {
+func (r *schoolResolver) Courses(ctx context.Context, obj *model.School, term model.TermInput, first int, after *string) (*model.CourseConnection, error) {
 	if after != nil {
 		cursor, err := pagination.DecodeCursor(after)
 		if err != nil {

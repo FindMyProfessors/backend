@@ -118,6 +118,11 @@ type TagAmount struct {
 	Amount int `json:"amount"`
 }
 
+type TermInput struct {
+	Year     int      `json:"year"`
+	Semester Semester `json:"semester"`
+}
+
 type Grade string
 
 const (
@@ -190,6 +195,49 @@ func (e *Grade) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Grade) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type Semester string
+
+const (
+	SemesterFall   Semester = "FALL"
+	SemesterSpring Semester = "SPRING"
+	SemesterSummer Semester = "SUMMER"
+)
+
+var AllSemester = []Semester{
+	SemesterFall,
+	SemesterSpring,
+	SemesterSummer,
+}
+
+func (e Semester) IsValid() bool {
+	switch e {
+	case SemesterFall, SemesterSpring, SemesterSummer:
+		return true
+	}
+	return false
+}
+
+func (e Semester) String() string {
+	return string(e)
+}
+
+func (e *Semester) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Semester(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Semester", str)
+	}
+	return nil
+}
+
+func (e Semester) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
