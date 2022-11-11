@@ -6,8 +6,18 @@ import (
 )
 
 func (r *Repository) CreateSchool(ctx context.Context, input *model.NewSchool) (school *model.School, err error) {
-	//TODO implement me
-	panic("implement me")
+	school = &model.School{
+		Name: input.Name,
+	}
+
+	sql := `INSERT INTO schools (name) VALUES ($1) RETURNING id`
+
+	err = r.DatabasePool.QueryRow(ctx, sql, input.Name).Scan(school.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return school, err
 }
 
 func (r *Repository) GetSchoolById(ctx context.Context, id string) (school *model.School, err error) {
