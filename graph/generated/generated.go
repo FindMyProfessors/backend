@@ -73,7 +73,7 @@ type ComplexityRoot struct {
 		CreateProfessor func(childComplexity int, schoolID string, input model.NewProfessor) int
 		CreateReview    func(childComplexity int, professorID string, input model.NewReview) int
 		CreateSchool    func(childComplexity int, input model.NewSchool) int
-		MergeProfessor  func(childComplexity int, schoolProfessorID string, rmpProfessorID string) int
+		MergeProfessor  func(childComplexity int, schoolProfessorID string, rmpProfessorID string, input model.NewProfessor) int
 	}
 
 	PageInfo struct {
@@ -165,7 +165,7 @@ type MutationResolver interface {
 	CreateProfessor(ctx context.Context, schoolID string, input model.NewProfessor) (*model.Professor, error)
 	CreateCourse(ctx context.Context, schoolID string, input model.NewCourse) (*model.Course, error)
 	CreateReview(ctx context.Context, professorID string, input model.NewReview) (*model.Review, error)
-	MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string) (*model.Professor, error)
+	MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string, input model.NewProfessor) (*model.Professor, error)
 }
 type ProfessorResolver interface {
 	Rating(ctx context.Context, obj *model.Professor, topKpercentage *float64) (*model.Rating, error)
@@ -334,7 +334,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.MergeProfessor(childComplexity, args["schoolProfessorId"].(string), args["rmpProfessorId"].(string)), true
+		return e.complexity.Mutation.MergeProfessor(childComplexity, args["schoolProfessorId"].(string), args["rmpProfessorId"].(string), args["input"].(model.NewProfessor)), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -936,7 +936,7 @@ type Mutation {
     createProfessor(schoolId: ID!, input: NewProfessor!): Professor
     createCourse(schoolId: ID!, input: NewCourse!): Course
     createReview(professorId: ID!, input: NewReview!): Review
-    mergeProfessor(schoolProfessorId: ID!, rmpProfessorId: ID!): Professor
+    mergeProfessor(schoolProfessorId: ID!, rmpProfessorId: ID!, input: NewProfessor!): Professor
 }
 
 #██████   █████   ██████  ██ ███    ██  █████  ████████ ██  ██████  ███    ██
@@ -1148,6 +1148,15 @@ func (ec *executionContext) field_Mutation_mergeProfessor_args(ctx context.Conte
 		}
 	}
 	args["rmpProfessorId"] = arg1
+	var arg2 model.NewProfessor
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg2, err = ec.unmarshalNNewProfessor2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐNewProfessor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg2
 	return args, nil
 }
 
@@ -2194,7 +2203,7 @@ func (ec *executionContext) _Mutation_mergeProfessor(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().MergeProfessor(rctx, fc.Args["schoolProfessorId"].(string), fc.Args["rmpProfessorId"].(string))
+		return ec.resolvers.Mutation().MergeProfessor(rctx, fc.Args["schoolProfessorId"].(string), fc.Args["rmpProfessorId"].(string), fc.Args["input"].(model.NewProfessor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

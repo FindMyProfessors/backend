@@ -159,7 +159,7 @@ type Mutation {
     createProfessor(schoolId: ID!, input: NewProfessor!): Professor
     createCourse(schoolId: ID!, input: NewCourse!): Course
     createReview(professorId: ID!, input: NewReview!): Review
-    mergeProfessor(schoolProfessorId: ID!, rmpProfessorId: ID!): Professor
+    mergeProfessor(schoolProfessorId: ID!, rmpProfessorId: ID!, input: NewProfessor!): Professor
 }
 
 #██████   █████   ██████  ██ ███    ██  █████  ████████ ██  ██████  ███    ██

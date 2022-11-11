@@ -16,6 +16,7 @@ type Professor struct {
 	Rating    *Rating            `json:"rating"`
 	Analysis  *ProfessorAnalysis `json:"analysis"`
 	SchoolID  string             `json:"schoolId"`
+	RMPId     *string            `json:"rmpId"`
 	School    *School            `json:"school"`
 	Reviews   *ReviewConnection  `json:"reviews"`
 	Teaches   *CourseConnection  `json:"teaches"`

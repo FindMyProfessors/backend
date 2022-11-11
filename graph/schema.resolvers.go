@@ -49,8 +49,8 @@ func (r *mutationResolver) CreateReview(ctx context.Context, professorID string,
 }
 
 // MergeProfessor is the resolver for the mergeProfessor field.
-func (r *mutationResolver) MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string) (*model.Professor, error) {
-	return r.Repository.MergeProfessor(ctx, schoolProfessorID, rmpProfessorID)
+func (r *mutationResolver) MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string, input model.NewProfessor) (*model.Professor, error) {
+	return r.Repository.MergeProfessor(ctx, schoolProfessorID, rmpProfessorID, &input)
 }
 
 // Rating is the resolver for the rating field.
