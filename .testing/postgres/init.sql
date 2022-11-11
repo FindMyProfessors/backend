@@ -4,7 +4,7 @@ create table professors
     school_id  integer not null,
     first_name varchar not null,
     last_name  varchar not null,
-    rmp_id     varchar not null,
+    rmp_id     varchar,
     constraint professors_pk
         primary key (id)
 );
@@ -20,9 +20,9 @@ create table schools
 create table reviews
 (
     id           serial,
-    quality      double precision not null,
+    quality      double precision    not null,
     difficulty   double precision,
-    time         timestamp        not null,
+    time         timestamp           not null,
     tags         character varying[] not null,
     grade        varchar,
     professor_id integer,
