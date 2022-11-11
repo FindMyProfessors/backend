@@ -21,8 +21,18 @@ func (r *Repository) CreateSchool(ctx context.Context, input *model.NewSchool) (
 }
 
 func (r *Repository) GetSchoolById(ctx context.Context, id string) (school *model.School, err error) {
-	//TODO implement me
-	panic("implement me")
+	school = &model.School{
+		ID: id,
+	}
+
+	sql := `SELECT name FROM schools WHERE id = $1`
+
+	err = r.DatabasePool.QueryRow(ctx, sql, id).Scan(school.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return school, err
 }
 
 func (r *Repository) GetSchoolByCourse(ctx context.Context, courseId string) (school *model.School, err error) {
