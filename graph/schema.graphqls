@@ -146,6 +146,7 @@ input NewProfessor {
 }
 
 type Query {
+    professorByRMPId(rmpId: String!): Professor
     professor(id: ID!): Professor
     school(id: ID!): School
     schools(first: Int! = 50, after: String): SchoolConnection! @pagination(maxLength: 50) @goField(forceResolver: true)

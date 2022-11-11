@@ -6,9 +6,9 @@ package graph
 import (
 	"context"
 	"errors"
-	"github.com/FindMyProfessors/backend/analysis"
 	"math"
 
+	"github.com/FindMyProfessors/backend/analysis"
 	"github.com/FindMyProfessors/backend/graph/generated"
 	"github.com/FindMyProfessors/backend/graph/model"
 	"github.com/FindMyProfessors/backend/pagination"
@@ -183,6 +183,11 @@ func (r *professorResolver) Teaches(ctx context.Context, obj *model.Professor, f
 	}
 
 	return &model.CourseConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(courses[0].ID, courses[len(courses)-1].ID)}, nil
+}
+
+// ProfessorByRMPId is the resolver for the professorByRMPId field.
+func (r *queryResolver) ProfessorByRMPId(ctx context.Context, rmpID string) (*model.Professor, error) {
+	return r.Repository.GetProfessorByRMPId(ctx, rmpID)
 }
 
 // Professor is the resolver for the professor field.

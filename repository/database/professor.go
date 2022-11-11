@@ -67,6 +67,21 @@ func (r *Repository) GetProfessorsBySchool(ctx context.Context, id string, first
 	return professors, total, err
 }
 
+func (r *Repository) GetProfessorByRMPId(ctx context.Context, id string) (professor *model.Professor, err error) {
+	professor = &model.Professor{
+		RMPId: &id,
+	}
+
+	sql := `SELECT id, first_name, last_name FROM professors WHERE rmp_id = $1`
+
+	err = r.DatabasePool.QueryRow(ctx, sql, id).Scan(&professor.ID, &professor.FirstName, &professor.LastName)
+	if err != nil {
+		return nil, err
+	}
+
+	return professor, err
+}
+
 func (r *Repository) GetProfessorById(ctx context.Context, id string) (professor *model.Professor, err error) {
 	return GetProfessorByIdWithQueryable(ctx, r.DatabasePool, id)
 }
