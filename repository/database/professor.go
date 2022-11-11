@@ -166,3 +166,15 @@ func (r *Repository) MergeProfessor(ctx context.Context, schoolProfessorID strin
 	// TODO: Write new professor
 	return professor, err
 }
+
+func (r *Repository) GetSchoolByProfessor(ctx context.Context, id string) (school *model.School, err error) {
+	sql := `SELECT schools.id, schools.name FROM schools JOIN professors p on schools.id = p.school_id WHERE p.id = $1`
+
+	school = &model.School{}
+
+	err = r.DatabasePool.QueryRow(ctx, sql, id).Scan(&school.ID, &school.Name)
+	if err != nil {
+		return nil, err
+	}
+	return school, nil
+}

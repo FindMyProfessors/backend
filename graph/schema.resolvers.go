@@ -6,7 +6,6 @@ package graph
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/FindMyProfessors/backend/analysis"
 	"math"
 
@@ -146,7 +145,10 @@ func (r *professorResolver) Analysis(ctx context.Context, obj *model.Professor) 
 
 // School is the resolver for the school field.
 func (r *professorResolver) School(ctx context.Context, obj *model.Professor) (*model.School, error) {
-	panic(fmt.Errorf("not implemented"))
+	if len(obj.SchoolID) > 0 {
+		return r.Repository.GetSchoolById(ctx, obj.SchoolID)
+	}
+	return r.Repository.GetSchoolByProfessor(ctx, obj.ID)
 }
 
 // Reviews is the resolver for the reviews field.
