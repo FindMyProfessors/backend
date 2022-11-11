@@ -6,8 +6,20 @@ import (
 )
 
 func (r *Repository) CreateProfessor(ctx context.Context, schoolID string, input *model.NewProfessor) (professor *model.Professor, err error) {
-	//TODO implement me
-	panic("implement me")
+	professor = &model.Professor{
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		SchoolID:  schoolID,
+	}
+
+	sql := `INSERT INTO professors (school_id, first_name, last_name, rmp_id) VALUES ($1, $2, $3, $4) RETURNING id`
+
+	err = r.DatabasePool.QueryRow(ctx, sql, schoolID, input.FirstName, input.LastName, input.RmpID).Scan(professor.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return professor, err
 }
 
 func (r *Repository) GetProfessorsBySchool(ctx context.Context, id string, first int, after *string) (courses []*model.Professor, total int, err error) {
