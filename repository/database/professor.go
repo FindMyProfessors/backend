@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/FindMyProfessors/backend/graph/model"
 	"github.com/jackc/pgx/v5"
+	"strconv"
 )
 
 func (r *Repository) CreateProfessor(ctx context.Context, schoolID string, input *model.NewProfessor) (professor *model.Professor, err error) {
@@ -15,11 +16,12 @@ func (r *Repository) CreateProfessor(ctx context.Context, schoolID string, input
 	}
 
 	sql := `INSERT INTO professors (school_id, first_name, last_name, rmp_id) VALUES ($1, $2, $3, $4) RETURNING id`
-
-	err = r.DatabasePool.QueryRow(ctx, sql, schoolID, input.FirstName, input.LastName, input.RmpID).Scan(professor.ID)
+	var intId int
+	err = r.DatabasePool.QueryRow(ctx, sql, schoolID, input.FirstName, input.LastName, input.RmpID).Scan(&intId)
 	if err != nil {
 		return nil, err
 	}
+	professor.ID = strconv.Itoa(intId)
 
 	return professor, err
 }
@@ -43,10 +45,12 @@ func (r *Repository) GetProfessorsBySchool(ctx context.Context, id string, first
 
 		for rows.Next() {
 			professor := model.Professor{SchoolID: id}
-			err = rows.Scan(&professor.ID, &professor.FirstName, &professor.LastName, professor.RMPId)
+			var intId int
+			err = rows.Scan(&intId, &professor.FirstName, &professor.LastName, professor.RMPId)
 			if err != nil {
 				return err
 			}
+			professor.ID = strconv.Itoa(intId)
 			professors = append(professors, &professor)
 		}
 
@@ -101,10 +105,12 @@ func (r *Repository) GetProfessorsByCourse(ctx context.Context, courseId string,
 
 		for rows.Next() {
 			var professor model.Professor
-			err = rows.Scan(&professor.ID, &professor.FirstName, &professor.LastName, &professor.SchoolID)
+			var intId int
+			err = rows.Scan(&intId, &professor.FirstName, &professor.LastName, &professor.SchoolID)
 			if err != nil {
 				return err
 			}
+			professor.ID = strconv.Itoa(intId)
 			professors = append(professors, &professor)
 		}
 
@@ -157,5 +163,6 @@ func (r *Repository) MergeProfessor(ctx context.Context, schoolProfessorID strin
 
 		return nil
 	})
+	// TODO: Write new professor
 	return professor, err
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/FindMyProfessors/backend/graph/model"
 	"github.com/jackc/pgx/v5"
+	"strconv"
 )
 
 func (r *Repository) CreateSchool(ctx context.Context, input *model.NewSchool) (school *model.School, err error) {
@@ -13,11 +14,14 @@ func (r *Repository) CreateSchool(ctx context.Context, input *model.NewSchool) (
 	}
 
 	sql := `INSERT INTO schools (name) VALUES ($1) RETURNING id`
+	var intId int
 
-	err = r.DatabasePool.QueryRow(ctx, sql, input.Name).Scan(school.ID)
+	err = r.DatabasePool.QueryRow(ctx, sql, input.Name).Scan(&intId)
 	if err != nil {
 		return nil, err
 	}
+
+	school.ID = strconv.Itoa(intId)
 
 	return school, err
 }

@@ -6,10 +6,10 @@ package graph
 import (
 	"context"
 	"fmt"
-	"github.com/FindMyProfessors/backend/pagination"
 
 	"github.com/FindMyProfessors/backend/graph/generated"
 	"github.com/FindMyProfessors/backend/graph/model"
+	"github.com/FindMyProfessors/backend/pagination"
 )
 
 // School is the resolver for the school field.
