@@ -22,6 +22,8 @@ type Professor {
     firstName: String!
     lastName: String!
 
+    linked: Boolean! @goField(forceResolver: true)
+
     rating(topKPercentage: Float): Rating! @goField(forceResolver: true)
 
     analysis: ProfessorAnalysis! @goField(forceResolver: true)

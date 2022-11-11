@@ -88,6 +88,7 @@ type ComplexityRoot struct {
 		FirstName func(childComplexity int) int
 		ID        func(childComplexity int) int
 		LastName  func(childComplexity int) int
+		Linked    func(childComplexity int) int
 		Rating    func(childComplexity int, topKpercentage *float64) int
 		Reviews   func(childComplexity int, first int, after *string) int
 		School    func(childComplexity int) int
@@ -168,6 +169,7 @@ type MutationResolver interface {
 	MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string, input model.NewProfessor) (*model.Professor, error)
 }
 type ProfessorResolver interface {
+	Linked(ctx context.Context, obj *model.Professor) (bool, error)
 	Rating(ctx context.Context, obj *model.Professor, topKpercentage *float64) (*model.Rating, error)
 	Analysis(ctx context.Context, obj *model.Professor) (*model.ProfessorAnalysis, error)
 	School(ctx context.Context, obj *model.Professor) (*model.School, error)
@@ -391,6 +393,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Professor.LastName(childComplexity), true
+
+	case "Professor.linked":
+		if e.complexity.Professor.Linked == nil {
+			break
+		}
+
+		return e.complexity.Professor.Linked(childComplexity), true
 
 	case "Professor.rating":
 		if e.complexity.Professor.Rating == nil {
@@ -798,6 +807,8 @@ type Professor {
     id: ID!
     firstName: String!
     lastName: String!
+
+    linked: Boolean! @goField(forceResolver: true)
 
     rating(topKPercentage: Float): Rating! @goField(forceResolver: true)
 
@@ -2031,6 +2042,8 @@ func (ec *executionContext) fieldContext_Mutation_createProfessor(ctx context.Co
 				return ec.fieldContext_Professor_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Professor_lastName(ctx, field)
+			case "linked":
+				return ec.fieldContext_Professor_linked(ctx, field)
 			case "rating":
 				return ec.fieldContext_Professor_rating(ctx, field)
 			case "analysis":
@@ -2231,6 +2244,8 @@ func (ec *executionContext) fieldContext_Mutation_mergeProfessor(ctx context.Con
 				return ec.fieldContext_Professor_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Professor_lastName(ctx, field)
+			case "linked":
+				return ec.fieldContext_Professor_linked(ctx, field)
 			case "rating":
 				return ec.fieldContext_Professor_rating(ctx, field)
 			case "analysis":
@@ -2562,6 +2577,50 @@ func (ec *executionContext) fieldContext_Professor_lastName(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Professor_linked(ctx context.Context, field graphql.CollectedField, obj *model.Professor) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Professor_linked(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Professor().Linked(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Professor_linked(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Professor",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3156,6 +3215,8 @@ func (ec *executionContext) fieldContext_ProfessorConnection_professors(ctx cont
 				return ec.fieldContext_Professor_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Professor_lastName(ctx, field)
+			case "linked":
+				return ec.fieldContext_Professor_linked(ctx, field)
 			case "rating":
 				return ec.fieldContext_Professor_rating(ctx, field)
 			case "analysis":
@@ -3215,6 +3276,8 @@ func (ec *executionContext) fieldContext_Query_professor(ctx context.Context, fi
 				return ec.fieldContext_Professor_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Professor_lastName(ctx, field)
+			case "linked":
+				return ec.fieldContext_Professor_linked(ctx, field)
 			case "rating":
 				return ec.fieldContext_Professor_rating(ctx, field)
 			case "analysis":
@@ -7124,6 +7187,26 @@ func (ec *executionContext) _Professor(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "linked":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Professor_linked(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "rating":
 			field := field
 

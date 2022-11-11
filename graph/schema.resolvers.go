@@ -53,6 +53,11 @@ func (r *mutationResolver) MergeProfessor(ctx context.Context, schoolProfessorID
 	return r.Repository.MergeProfessor(ctx, schoolProfessorID, rmpProfessorID, &input)
 }
 
+// Linked is the resolver for the linked field.
+func (r *professorResolver) Linked(ctx context.Context, obj *model.Professor) (bool, error) {
+	return obj.RMPId != nil, nil
+}
+
 // Rating is the resolver for the rating field.
 func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, topKpercentage *float64) (*model.Rating, error) {
 	panic(fmt.Errorf("not implemented"))
