@@ -78,8 +78,42 @@ func (r *Repository) GetProfessorById(ctx context.Context, id string) (professor
 }
 
 func (r *Repository) GetProfessorsByCourse(ctx context.Context, courseId string, first int, after *string) (professors []*model.Professor, total int, err error) {
-	//TODO implement me
-	panic("implement me")
+	var sql string
+	var variables []any
+	if after != nil {
+		sql = `SELECT professors.id, professors.first_name, professors.last_name, professors.school_id FROM professors INNER JOIN professor_courses pc on professors.id = pc.professor_id WHERE course_id = $1 AND id > $2 ORDER BY id LIMIT $3`
+		variables = []any{courseId, *after, first}
+	} else {
+		sql = `SELECT professors.id, professors.first_name, professors.last_name, professors.school_id FROM professors INNER JOIN professor_courses pc on professors.id = pc.professor_id WHERE course_id = $1 ORDER BY id LIMIT $2`
+		variables = []any{courseId, first}
+	}
+
+	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		rows, err := r.DatabasePool.Query(ctx, sql, variables...)
+		if err != nil {
+			return err
+		}
+
+		for rows.Next() {
+			var professor model.Professor
+			err = rows.Scan(&professor.ID, &professor.FirstName, &professor.LastName, &professor.SchoolID)
+			if err != nil {
+				return err
+			}
+			professors = append(professors, &professor)
+		}
+
+		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM professor_courses WHERE course_id = $1`, courseId).Scan(&total)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return professors, total, err
 }
 
 func (r *Repository) MergeProfessor(ctx context.Context, schoolProfessorID string, rmpProfessorID string) (professor *model.Professor, err error) {
