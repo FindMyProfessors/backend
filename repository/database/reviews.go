@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"github.com/FindMyProfessors/backend/graph/model"
+	"github.com/jackc/pgx/v5"
 )
 
 // CreateReview Adds the review and its attributes to the database (associated with a professor_id) with the SQL insert command.
@@ -24,6 +25,40 @@ func (r *Repository) CreateReview(ctx context.Context, schoolID string, input *m
 }
 
 func (r *Repository) GetReviewsByProfessor(ctx context.Context, id string, first int, after *string) (reviews []*model.Review, total int, err error) {
-	//TODO implement me
-	panic("implement me")
+	var sql string
+	var variables []any
+	if after != nil {
+		sql = `SELECT reviews.id, reviews.quality, reviews.difficulty, reviews.time, reviews.tags, reviews.grade FROM reviews WHERE professor_id = $1 AND id > $2 ORDER BY id LIMIT $3`
+		variables = []any{id, *after, first}
+	} else {
+		sql = `SELECT reviews.id, reviews.quality, reviews.difficulty, reviews.time, reviews.tags, reviews.grade FROM reviews WHERE professor_id = $1 ORDER BY id LIMIT $2`
+		variables = []any{id, first}
+	}
+
+	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, sql, variables...)
+		if err != nil {
+			return err
+		}
+
+		for rows.Next() {
+			var review model.Review
+			err = rows.Scan(&review.ID, &review.Quality, &review.Difficulty, &review.Time, &review.Tags, &review.Grade)
+			if err != nil {
+				return err
+			}
+			reviews = append(reviews, &review)
+		}
+
+		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE professor_id = $1`, id).Scan(&total)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return reviews, total, nil
 }
