@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"github.com/FindMyProfessors/backend/graph/model"
+	"github.com/jackc/pgx/v5"
 )
 
 // Adds the course and its attributes to the database with the SQL insert command.
@@ -43,7 +44,7 @@ func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string) (cou
 	courseCodes = []*string{}
 
 	sql := `SELECT code FROM courses WHERE school_id = $1 ORDER BY code DESC`
-  
+
 	rows, err := r.DatabasePool.Query(ctx, sql, id)
 	if err != nil {
 		return nil, err
@@ -63,12 +64,82 @@ func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string) (cou
 	return courseCodes, err
 }
 
-func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first int, after *string) (reviews []*model.Course, total int, err error) {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first int, after *string) (courses []*model.Course, total int, err error) {
+	var sql string
+	var variables []any
+	if after != nil {
+		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 AND id > $2 ORDER BY courses.id LIMIT $3`
+		variables = []any{id, first}
+	} else {
+		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 ORDER BY courses.id LIMIT $2`
+		variables = []any{id, first}
+	}
+
+	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, sql, variables...)
+		if err != nil {
+			return err
+		}
+
+		for rows.Next() {
+			var course model.Course
+			err = rows.Scan(&course.ID, &course.Name, &course.Code, &course.SchoolID)
+			if err != nil {
+				return err
+			}
+			courses = append(courses, &course)
+		}
+
+		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM professor_courses WHERE professor_id = $1`, id).Scan(&total)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return courses, total, nil
 }
 
 func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first int, after *string) (courses []*model.Course, total int, err error) {
-	//TODO implement me
-	panic("implement me")
+	var sql string
+	var variables []any
+
+	if after != nil {
+		sql = `SELECT id, name, code FROM courses WHERE school_id = $1 AND id > $2 ORDER BY id LIMIT $3`
+		variables = []any{id, *after, first}
+	} else {
+		sql = `SELECT id, name, code FROM courses WHERE school_id = $1 ORDER BY id LIMIT $2`
+		variables = []any{id, first}
+	}
+
+	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, sql, variables...)
+		if err != nil {
+			return err
+		}
+
+		for rows.Next() {
+			var course model.Course
+			err = rows.Scan(&course.ID, &course.Name, &course.Code, &course.SchoolID)
+			if err != nil {
+				return err
+			}
+			courses = append(courses, &course)
+		}
+
+		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM courses WHERE school_id = $1`, id).Scan(&total)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return courses, total, nil
 }
