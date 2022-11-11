@@ -784,8 +784,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../schema.graphqls", Input: `scalar Time
-# noinspection GraphQLInvalidDirectiveLocation, GraphQLDuplicateDirective,GraphQLUnresolvedReference,GraphQLMemberRedefinition,GraphQLMissingType,GraphQLTypeRedefinition
+	{Name: "../schema.graphqls", Input: `# noinspection GraphQLInvalidDirectiveLocation, GraphQLDuplicateDirective,GraphQLUnresolvedReference,GraphQLMemberRedefinition,GraphQLMissingType,GraphQLTypeRedefinition
 
 directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION
     | FIELD_DEFINITION
@@ -838,7 +837,7 @@ type TagAmount {
 
 type ChartValue {
     value: Float!
-    date: Time!
+    date: RFC3339Time!
 }
 
 type ProfessorAnalysis {
@@ -912,7 +911,7 @@ type Review {
     id: ID!
     quality: Float!
     difficulty: Float!
-    time: Time!
+    time: RFC3339Time!
     tags: [Tag!]!
     grade: Grade!
 }
@@ -920,7 +919,7 @@ type Review {
 input NewReview {
     quality: Float!
     difficulty: Float!
-    time: Time!
+    time: RFC3339Time!
     tags: [Tag!]!
     grade: Grade!
 }
@@ -1004,6 +1003,8 @@ type ReviewConnection implements Connection {
 
     reviews: [Review!]!
 }
+
+scalar RFC3339Time
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -1494,7 +1495,7 @@ func (ec *executionContext) _ChartValue_date(ctx context.Context, field graphql.
 	}
 	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNRFC3339Time2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ChartValue_date(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1504,7 +1505,7 @@ func (ec *executionContext) fieldContext_ChartValue_date(ctx context.Context, fi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
+			return nil, errors.New("field of type RFC3339Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4097,7 +4098,7 @@ func (ec *executionContext) _Review_time(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNRFC3339Time2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Review_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4107,7 +4108,7 @@ func (ec *executionContext) fieldContext_Review_time(ctx context.Context, field 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
+			return nil, errors.New("field of type RFC3339Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6792,7 +6793,7 @@ func (ec *executionContext) unmarshalInputNewReview(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("time"))
-			it.Time, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
+			it.Time, err = ec.unmarshalNRFC3339Time2timeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8438,6 +8439,21 @@ func (ec *executionContext) marshalNProfessorConnection2ᚖgithubᚗcomᚋFindMy
 	return ec._ProfessorConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNRFC3339Time2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	res, err := model.UnmarshalRFC3339Time(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRFC3339Time2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	res := model.MarshalRFC3339Time(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNRating2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐRating(ctx context.Context, sel ast.SelectionSet, v model.Rating) graphql.Marshaler {
 	return ec._Rating(ctx, sel, &v)
 }
@@ -8756,21 +8772,6 @@ func (ec *executionContext) marshalNTagAmount2ᚖgithubᚗcomᚋFindMyProfessors
 		return graphql.Null
 	}
 	return ec._TagAmount(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	res, err := graphql.UnmarshalTime(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
-	res := graphql.MarshalTime(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

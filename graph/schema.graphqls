@@ -1,4 +1,3 @@
-scalar Time
 # noinspection GraphQLInvalidDirectiveLocation, GraphQLDuplicateDirective,GraphQLUnresolvedReference,GraphQLMemberRedefinition,GraphQLMissingType,GraphQLTypeRedefinition
 
 directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION
@@ -52,7 +51,7 @@ type TagAmount {
 
 type ChartValue {
     value: Float!
-    date: Time!
+    date: RFC3339Time!
 }
 
 type ProfessorAnalysis {
@@ -126,7 +125,7 @@ type Review {
     id: ID!
     quality: Float!
     difficulty: Float!
-    time: Time!
+    time: RFC3339Time!
     tags: [Tag!]!
     grade: Grade!
 }
@@ -134,7 +133,7 @@ type Review {
 input NewReview {
     quality: Float!
     difficulty: Float!
-    time: Time!
+    time: RFC3339Time!
     tags: [Tag!]!
     grade: Grade!
 }
@@ -218,3 +217,5 @@ type ReviewConnection implements Connection {
 
     reviews: [Review!]!
 }
+
+scalar RFC3339Time

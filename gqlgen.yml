@@ -61,6 +61,8 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+  RFC3339Time:
+    model: github.com/FindMyProfessors/backend/graph/model.RFC3339Time
   Course:
     model: github.com/FindMyProfessors/backend/graph/model.Course
   Professor:
