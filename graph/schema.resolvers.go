@@ -28,7 +28,7 @@ func (r *courseResolver) TaughtBy(ctx context.Context, obj *model.Course, term m
 		}
 		after = &cursor
 	}
-	professors, total, err := r.Repository.GetProfessorsByCourse(ctx, obj.ID, first, after)
+	professors, total, err := r.Repository.GetProfessorsByCourse(ctx, obj.ID, first, after, &term)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (r *professorResolver) Teaches(ctx context.Context, obj *model.Professor, t
 		}
 		after = &cursor
 	}
-	courses, total, err := r.Repository.GetCoursesByProfessor(ctx, obj.ID, first, after)
+	courses, total, err := r.Repository.GetCoursesByProfessor(ctx, obj.ID, first, after, &term)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +243,7 @@ func (r *queryResolver) Professors(ctx context.Context, schoolID string, first i
 
 // CourseCodes is the resolver for the courseCodes field.
 func (r *schoolResolver) CourseCodes(ctx context.Context, obj *model.School, term model.TermInput) ([]*string, error) {
-	courseCodes, err := r.Repository.GetCourseCodesBySchool(ctx, obj.ID)
+	courseCodes, err := r.Repository.GetCourseCodesBySchool(ctx, obj.ID, &term)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +259,7 @@ func (r *schoolResolver) Courses(ctx context.Context, obj *model.School, term mo
 		}
 		after = &cursor
 	}
-	courses, total, err := r.Repository.GetCoursesBySchool(ctx, obj.ID, first, after)
+	courses, total, err := r.Repository.GetCoursesBySchool(ctx, obj.ID, first, after, &term)
 	if err != nil {
 		return nil, err
 	}

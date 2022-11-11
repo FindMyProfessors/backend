@@ -44,12 +44,12 @@ func (r *Repository) GetCourseById(ctx context.Context, id string) (course *mode
 	return course, err
 }
 
-func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string) (courseCodes []*string, err error) {
+func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string, input *model.TermInput) (courseCodes []*string, err error) {
 	courseCodes = []*string{}
 
-	sql := `SELECT code FROM courses WHERE school_id = $1 ORDER BY code DESC`
+	sql := `SELECT code FROM courses WHERE school_id = $1 AND year = $2 AND semester = $3 ORDER BY code DESC`
 
-	rows, err := r.DatabasePool.Query(ctx, sql, id)
+	rows, err := r.DatabasePool.Query(ctx, sql, id, input.Year, input.Semester)
 	if err != nil {
 		return nil, err
 	}
@@ -68,15 +68,15 @@ func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string) (cou
 	return courseCodes, err
 }
 
-func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first int, after *string) (courses []*model.Course, total int, err error) {
+func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first int, after *string, input *model.TermInput) (courses []*model.Course, total int, err error) {
 	var sql string
 	var variables []any
 	if after != nil {
-		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 AND id > $2 ORDER BY id LIMIT $3`
-		variables = []any{id, *after, first}
+		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 AND year = $2 AND semester = $3 id > $4 ORDER BY id LIMIT $5`
+		variables = []any{id, input.Year, input.Semester, *after, first}
 	} else {
-		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 ORDER BY id LIMIT $2`
-		variables = []any{id, first}
+		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 AND year = $2 AND semester = $3 ORDER BY id LIMIT $4`
+		variables = []any{id, input.Year, input.Semester, first}
 	}
 
 	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
@@ -96,7 +96,7 @@ func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first
 			courses = append(courses, &course)
 		}
 
-		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM professor_courses WHERE professor_id = $1`, id).Scan(&total)
+		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM professor_courses WHERE professor_id = $1 AND year = $2 AND semester = $3`, id).Scan(&total)
 		if err != nil {
 			return err
 		}
@@ -109,16 +109,16 @@ func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first
 	return courses, total, nil
 }
 
-func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first int, after *string) (courses []*model.Course, total int, err error) {
+func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first int, after *string, input *model.TermInput) (courses []*model.Course, total int, err error) {
 	var sql string
 	var variables []any
 
 	if after != nil {
-		sql = `SELECT id, name, code FROM courses WHERE school_id = $1 AND id > $2 ORDER BY id LIMIT $3`
-		variables = []any{id, *after, first}
+		sql = `SELECT id, name, code FROM courses WHERE school_id = $1 AND year = $2 AND semester = $3 AND id > $4 ORDER BY id LIMIT $5`
+		variables = []any{id, input.Year, input.Semester, *after, first}
 	} else {
-		sql = `SELECT id, name, code FROM courses WHERE school_id = $1 ORDER BY id LIMIT $2`
-		variables = []any{id, first}
+		sql = `SELECT id, name, code FROM courses WHERE school_id = $1 AND year = $2 AND semester = $3 ORDER BY id LIMIT $4`
+		variables = []any{id, input.Year, input.Semester, first}
 	}
 
 	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
