@@ -263,6 +263,14 @@ const (
 	TagGradedByFewThings      Tag = "GRADED_BY_FEW_THINGS"
 	TagAccessibleOutsideClass Tag = "ACCESSIBLE_OUTSIDE_CLASS"
 	TagOnlineSavvy            Tag = "ONLINE_SAVVY"
+	TagTestsAreTough          Tag = "TESTS_ARE_TOUGH"
+	TagTestHeavy              Tag = "TEST_HEAVY"
+	TagWouldTakeAgain         Tag = "WOULD_TAKE_AGAIN"
+	TagTestsNotMany           Tag = "TESTS_NOT_MANY"
+	TagSkipClassYouWontPass   Tag = "SKIP_CLASS_YOU_WONT_PASS"
+	TagCaresAboutStudents     Tag = "CARES_ABOUT_STUDENTS"
+	TagRespectedByStudents    Tag = "RESPECTED_BY_STUDENTS"
+	TagExtraCreditOffered     Tag = "EXTRA_CREDIT_OFFERED"
 )
 
 var AllTag = []Tag{
@@ -285,11 +293,19 @@ var AllTag = []Tag{
 	TagGradedByFewThings,
 	TagAccessibleOutsideClass,
 	TagOnlineSavvy,
+	TagTestsAreTough,
+	TagTestHeavy,
+	TagWouldTakeAgain,
+	TagTestsNotMany,
+	TagSkipClassYouWontPass,
+	TagCaresAboutStudents,
+	TagRespectedByStudents,
+	TagExtraCreditOffered,
 }
 
 func (e Tag) IsValid() bool {
 	switch e {
-	case TagToughGrader, TagGetReadyToRead, TagParticipationMatters, TagExtraCredit, TagGroupProjects, TagAmazingLectures, TagClearGradingCriteria, TagGivesGoodFeedback, TagInspirational, TagLotsOfHomework, TagHilarious, TagBewareOfPopQuizzes, TagSoManyPapers, TagCaring, TagRespected, TagLectureHeavy, TagGradedByFewThings, TagAccessibleOutsideClass, TagOnlineSavvy:
+	case TagToughGrader, TagGetReadyToRead, TagParticipationMatters, TagExtraCredit, TagGroupProjects, TagAmazingLectures, TagClearGradingCriteria, TagGivesGoodFeedback, TagInspirational, TagLotsOfHomework, TagHilarious, TagBewareOfPopQuizzes, TagSoManyPapers, TagCaring, TagRespected, TagLectureHeavy, TagGradedByFewThings, TagAccessibleOutsideClass, TagOnlineSavvy, TagTestsAreTough, TagTestHeavy, TagWouldTakeAgain, TagTestsNotMany, TagSkipClassYouWontPass, TagCaresAboutStudents, TagRespectedByStudents, TagExtraCreditOffered:
 		return true
 	}
 	return false
