@@ -161,7 +161,7 @@ type Query {
     professor(id: ID!): Professor
     school(id: ID!): School
     schools(first: Int! = 50, after: String): SchoolConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
-    professors(schoolId: ID!,first: Int! = 25 after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    professors(schoolId: ID!, first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
 }
 
 input NewSchool {
