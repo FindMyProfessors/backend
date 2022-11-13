@@ -1,3 +1,11 @@
+create table schools
+(
+    id   serial,
+    name varchar not null,
+    constraint schools_pk
+        primary key (id)
+);
+
 create table professors
 (
     id         serial,
@@ -6,15 +14,9 @@ create table professors
     last_name  varchar not null,
     rmp_id     varchar,
     constraint professors_pk
-        primary key (id)
-);
-
-create table schools
-(
-    id   serial,
-    name varchar not null,
-    constraint schools_pk
-        primary key (id)
+        primary key (id),
+    constraint professors_schools_id_fk
+        foreign key (school_id) references schools
 );
 
 create table reviews
@@ -28,7 +30,7 @@ create table reviews
     professor_id integer,
     constraint reviews_pk
         primary key (id),
-    constraint reviews_professors_null_fk
+    constraint reviews_professors_id_fk
         foreign key (professor_id) references professors
 );
 
@@ -40,7 +42,7 @@ create table courses
     school_id integer not null,
     constraint courses_pk
         primary key (id),
-    constraint courses_schools_null_fk
+    constraint courses_schools_id_fk
         foreign key (school_id) references schools
 );
 
@@ -48,6 +50,8 @@ create table professor_courses
 (
     professor_id integer not null,
     course_id    integer not null,
+    year         integer not null,
+    semester     varchar not null,
     constraint professor_courses_courses_id_fk
         foreign key (course_id) references courses,
     constraint professor_courses_professors_id_fk
