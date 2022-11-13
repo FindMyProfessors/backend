@@ -169,7 +169,7 @@ input NewSchool {
 }
 
 type Mutation {
-    createSchool(input: NewSchool!): School!
+    createSchool(input: NewSchool!): School
     createProfessor(schoolId: ID!, input: NewProfessor!): Professor
     createCourse(schoolId: ID!, input: NewCourse!): Course
     createReview(professorId: ID!, input: NewReview!): Review

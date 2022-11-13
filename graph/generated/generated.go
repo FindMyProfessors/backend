@@ -997,7 +997,7 @@ input NewSchool {
 }
 
 type Mutation {
-    createSchool(input: NewSchool!): School!
+    createSchool(input: NewSchool!): School
     createProfessor(schoolId: ID!, input: NewProfessor!): Professor
     createCourse(schoolId: ID!, input: NewCourse!): Course
     createReview(professorId: ID!, input: NewReview!): Review
@@ -2145,14 +2145,11 @@ func (ec *executionContext) _Mutation_createSchool(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.School)
 	fc.Result = res
-	return ec.marshalNSchool2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐSchool(ctx, field.Selections, res)
+	return ec.marshalOSchool2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐSchool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createSchool(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7443,9 +7440,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_createSchool(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "createProfessor":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
