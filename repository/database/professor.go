@@ -9,19 +9,43 @@ import (
 )
 
 func (r *Repository) CreateProfessor(ctx context.Context, schoolID string, input *model.NewProfessor) (professor *model.Professor, err error) {
-	professor = &model.Professor{
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
-		SchoolID:  schoolID,
-	}
+	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		// ensure no duplicates
+		// check if professor already exists
+		if input.RmpID != nil {
+			_, err = GetProfessorByRMPId(ctx, tx, *input.RmpID)
+			if err != nil {
+				if !errors.Is(err, pgx.ErrNoRows) {
+					return err
+				}
+			}
+		}
 
-	sql := `INSERT INTO professors (school_id, first_name, last_name, rmp_id) VALUES ($1, $2, $3, $4) RETURNING id`
-	var intId int
-	err = r.DatabasePool.QueryRow(ctx, sql, schoolID, input.FirstName, input.LastName, input.RmpID).Scan(&intId)
+		_, err = GetProfessorByNameAndSchool(ctx, tx, schoolID, input.FirstName, input.LastName)
+		if err != nil {
+			if !errors.Is(err, pgx.ErrNoRows) {
+				return err
+			}
+		}
+
+		professor = &model.Professor{
+			FirstName: input.FirstName,
+			LastName:  input.LastName,
+			SchoolID:  schoolID,
+		}
+
+		sql := `INSERT INTO professors (school_id, first_name, last_name, rmp_id) VALUES ($1, $2, $3, $4) RETURNING id`
+		var intId int
+		err = tx.QueryRow(ctx, sql, schoolID, input.FirstName, input.LastName, input.RmpID).Scan(&intId)
+		if err != nil {
+			return err
+		}
+		professor.ID = strconv.Itoa(intId)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	professor.ID = strconv.Itoa(intId)
 
 	return professor, err
 }
@@ -68,13 +92,34 @@ func (r *Repository) GetProfessorsBySchool(ctx context.Context, id string, first
 }
 
 func (r *Repository) GetProfessorByRMPId(ctx context.Context, id string) (professor *model.Professor, err error) {
+	return GetProfessorByRMPId(ctx, r.DatabasePool, id)
+}
+
+func GetProfessorByRMPId(ctx context.Context, queryable Queryable, id string) (professor *model.Professor, err error) {
 	professor = &model.Professor{
 		RMPId: &id,
 	}
 
 	sql := `SELECT id, first_name, last_name FROM professors WHERE rmp_id = $1`
 
-	err = r.DatabasePool.QueryRow(ctx, sql, id).Scan(&professor.ID, &professor.FirstName, &professor.LastName)
+	err = queryable.QueryRow(ctx, sql, id).Scan(&professor.ID, &professor.FirstName, &professor.LastName)
+	if err != nil {
+		return nil, err
+	}
+
+	return professor, err
+}
+
+func GetProfessorByNameAndSchool(ctx context.Context, queryable Queryable, schoolId string, firstName string, lastName string) (professor *model.Professor, err error) {
+	professor = &model.Professor{
+		SchoolID:  schoolId,
+		FirstName: firstName,
+		LastName:  lastName,
+	}
+
+	sql := `SELECT id, rmp_id FROM professors WHERE school_id = $1 AND first_name = $2 AND last_name = $3`
+
+	err = queryable.QueryRow(ctx, sql, professor.SchoolID, professor.FirstName, professor.LastName).Scan(&professor.ID, &professor.RMPId)
 	if err != nil {
 		return nil, err
 	}
