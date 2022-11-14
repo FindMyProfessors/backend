@@ -72,7 +72,7 @@ func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first
 	var sql string
 	var variables []any
 	if after != nil {
-		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 AND year = $2 AND semester = $3 id > $4 ORDER BY id LIMIT $5`
+		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 AND year = $2 AND semester = $3 AND id > $4 ORDER BY id LIMIT $5`
 		variables = []any{id, input.Year, input.Semester, *after, first}
 	} else {
 		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 AND year = $2 AND semester = $3 ORDER BY id LIMIT $4`
