@@ -138,7 +138,7 @@ func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first in
 			courses = append(courses, &course)
 		}
 
-		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM courses WHERE school_id = $1`, id).Scan(&total)
+		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE school_id = $3`, input.Semester.String(), input.Year, id).Scan(&total)
 		if err != nil {
 			return err
 		}
