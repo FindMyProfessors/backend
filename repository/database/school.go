@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-
 	"github.com/FindMyProfessors/backend/graph/model"
 	"github.com/jackc/pgx/v5"
 	"strconv"
@@ -88,10 +87,12 @@ func (r *Repository) GetSchools(ctx context.Context, first int, after *string) (
 		}
 
 		for rows.Next() {
-			err = rows.Scan(school.ID, school.Name)
+			var intId int
+			err = rows.Scan(&intId, &school.Name)
 			if err != nil {
 				return err
 			}
+			school.ID = strconv.Itoa(intId)
 			schools = append(schools, &school)
 		}
 		return nil
