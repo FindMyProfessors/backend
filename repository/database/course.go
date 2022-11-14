@@ -47,7 +47,7 @@ func (r *Repository) GetCourseById(ctx context.Context, id string) (course *mode
 func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string, input *model.TermInput) (courseCodes []*string, err error) {
 	courseCodes = []*string{}
 
-	sql := `SELECT courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE courses.school_id = $1 AND year = $2 AND semester = $3 ORDER BY id`
+	sql := `SELECT DISTINCT courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE courses.school_id = $1 AND year = $2 AND semester = $3 ORDER BY id`
 
 	rows, err := r.DatabasePool.Query(ctx, sql, id, input.Year, input.Semester.String())
 	if err != nil {
@@ -114,10 +114,10 @@ func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first in
 	var variables []any
 
 	if after != nil {
-		sql = `SELECT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 AND id > $4 ORDER BY id LIMIT $5`
+		sql = `SELECT DISTINCT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 AND id > $4 ORDER BY id LIMIT $5`
 		variables = []any{input.Semester, input.Year, id, *after, first}
 	} else {
-		sql = `SELECT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 ORDER BY id LIMIT $4`
+		sql = `SELECT DISTINCT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 ORDER BY id LIMIT $4`
 		variables = []any{input.Semester, input.Year, id, first}
 	}
 
