@@ -9,10 +9,16 @@ import (
 )
 
 func (r *Repository) CreateProfessor(ctx context.Context, schoolID string, input *model.NewProfessor) (professor *model.Professor, err error) {
+	professor = &model.Professor{
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		RMPId:     input.RmpID,
+		SchoolID:  schoolID,
+	}
 	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		// ensure no duplicates
 		// check if professor already exists
-		if input.RmpID != nil {
+		if input.RmpID != nil && len(*input.RmpID) > 0 {
 			_, err = GetProfessorByRMPId(ctx, tx, *input.RmpID)
 			if err != nil {
 				if !errors.Is(err, pgx.ErrNoRows) {
@@ -28,15 +34,15 @@ func (r *Repository) CreateProfessor(ctx context.Context, schoolID string, input
 			}
 		}
 
-		professor = &model.Professor{
-			FirstName: input.FirstName,
-			LastName:  input.LastName,
-			SchoolID:  schoolID,
-		}
-
 		sql := `INSERT INTO professors (school_id, first_name, last_name, rmp_id) VALUES ($1, $2, $3, $4) RETURNING id`
 		var intId int
-		err = tx.QueryRow(ctx, sql, schoolID, input.FirstName, input.LastName, input.RmpID).Scan(&intId)
+		var rmpId string
+		if input.RmpID != nil {
+			rmpId = *input.RmpID
+		} else {
+			rmpId = ""
+		}
+		err = tx.QueryRow(ctx, sql, schoolID, input.FirstName, input.LastName, rmpId).Scan(&intId)
 		if err != nil {
 			return err
 		}
