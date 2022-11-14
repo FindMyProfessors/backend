@@ -76,7 +76,7 @@ func (r *Repository) GetProfessorsBySchool(ctx context.Context, id string, first
 		for rows.Next() {
 			professor := model.Professor{SchoolID: id}
 			var intId int
-			err = rows.Scan(&intId, &professor.FirstName, &professor.LastName, professor.RMPId)
+			err = rows.Scan(&intId, &professor.FirstName, &professor.LastName, &professor.RMPId)
 			if err != nil {
 				return err
 			}
