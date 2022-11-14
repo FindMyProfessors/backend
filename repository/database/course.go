@@ -47,9 +47,9 @@ func (r *Repository) GetCourseById(ctx context.Context, id string) (course *mode
 func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string, input *model.TermInput) (courseCodes []*string, err error) {
 	courseCodes = []*string{}
 
-	sql := `SELECT code FROM courses WHERE school_id = $1 AND year = $2 AND semester = $3 ORDER BY code DESC`
+	sql := `SELECT courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE courses.school_id = $1 AND year = $2 AND semester = $3 ORDER BY id`
 
-	rows, err := r.DatabasePool.Query(ctx, sql, id, input.Year, input.Semester)
+	rows, err := r.DatabasePool.Query(ctx, sql, id, input.Year, input.Semester.String())
 	if err != nil {
 		return nil, err
 	}
