@@ -20,13 +20,14 @@ func DecodeCursor(cursor *string) (string, error) {
 	return bytesString, nil
 }
 
-func GetPageInfo(first string, last string) *model.PageInfo {
-	encodedFirst := base64.StdEncoding.EncodeToString([]byte(first))
-	encodedLast := base64.StdEncoding.EncodeToString([]byte(last))
+func GetPageInfo(firstElement string, lastElement string, lengthOfOutput int, amountRequested int) *model.PageInfo {
+	encodedFirst := base64.StdEncoding.EncodeToString([]byte(firstElement))
+	encodedLast := base64.StdEncoding.EncodeToString([]byte(lastElement))
 
 	return &model.PageInfo{
 		StartCursor: encodedFirst,
 		EndCursor:   encodedLast,
+		HasNextPage: lengthOfOutput >= amountRequested,
 	}
 }
 
