@@ -14,7 +14,7 @@ type Repository interface {
 
 	// School Type
 	GetCourseCodesBySchool(ctx context.Context, id string, input *model.TermInput) (courseCodes []*string, err error)
-	GetCoursesBySchool(ctx context.Context, id string, first int, after *string, input *model.TermInput) (courses []*model.Course, total int, err error)
+	GetCoursesBySchool(ctx context.Context, id string, first int, after *string, input *model.TermInput, filter *model.CourseFilter) (courses []*model.Course, total int, err error)
 	GetProfessorsBySchool(ctx context.Context, id string, first int, after *string) (professors []*model.Professor, total int, err error)
 	GetSchoolById(ctx context.Context, id string) (school *model.School, err error)
 

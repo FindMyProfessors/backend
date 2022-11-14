@@ -141,7 +141,7 @@ type ComplexityRoot struct {
 
 	School struct {
 		CourseCodes func(childComplexity int, term model.TermInput) int
-		Courses     func(childComplexity int, term model.TermInput, first int, after *string) int
+		Courses     func(childComplexity int, term model.TermInput, filter *model.CourseFilter, first int, after *string) int
 		ID          func(childComplexity int) int
 		Name        func(childComplexity int) int
 		Professors  func(childComplexity int, first int, after *string) int
@@ -188,7 +188,7 @@ type QueryResolver interface {
 }
 type SchoolResolver interface {
 	CourseCodes(ctx context.Context, obj *model.School, term model.TermInput) ([]*string, error)
-	Courses(ctx context.Context, obj *model.School, term model.TermInput, first int, after *string) (*model.CourseConnection, error)
+	Courses(ctx context.Context, obj *model.School, term model.TermInput, filter *model.CourseFilter, first int, after *string) (*model.CourseConnection, error)
 	Professors(ctx context.Context, obj *model.School, first int, after *string) (*model.ProfessorConnection, error)
 }
 
@@ -682,7 +682,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.School.Courses(childComplexity, args["term"].(model.TermInput), args["first"].(int), args["after"].(*string)), true
+		return e.complexity.School.Courses(childComplexity, args["term"].(model.TermInput), args["filter"].(*model.CourseFilter), args["first"].(int), args["after"].(*string)), true
 
 	case "School.id":
 		if e.complexity.School.ID == nil {
@@ -753,6 +753,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputCourseFilter,
 		ec.unmarshalInputNewCourse,
 		ec.unmarshalInputNewProfessor,
 		ec.unmarshalInputNewReview,
@@ -836,6 +837,11 @@ input TermInput {
     semester: Semester!
 }
 
+input CourseFilter {
+    startsWith: String
+}
+
+
 type School {
     id: ID!
     name: String!
@@ -843,7 +849,7 @@ type School {
     Returns a list of professors that teach at this school
     """
     courseCodes(term: TermInput!, ): [String]! @goField(forceResolver: true)
-    courses(term: TermInput!, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    courses(term: TermInput!, filter: CourseFilter, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
     professors(first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
 }
 
@@ -1485,24 +1491,33 @@ func (ec *executionContext) field_School_courses_args(ctx context.Context, rawAr
 		}
 	}
 	args["term"] = arg0
-	var arg1 int
+	var arg1 *model.CourseFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg1, err = ec.unmarshalOCourseFilter2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourseFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg1
+	var arg2 int
 	if tmp, ok := rawArgs["first"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg1
-	var arg2 *string
+	args["first"] = arg2
+	var arg3 *string
 	if tmp, ok := rawArgs["after"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["after"] = arg2
+	args["after"] = arg3
 	return args, nil
 }
 
@@ -4781,7 +4796,7 @@ func (ec *executionContext) _School_courses(ctx context.Context, field graphql.C
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.School().Courses(rctx, obj, fc.Args["term"].(model.TermInput), fc.Args["first"].(int), fc.Args["after"].(*string))
+			return ec.resolvers.School().Courses(rctx, obj, fc.Args["term"].(model.TermInput), fc.Args["filter"].(*model.CourseFilter), fc.Args["first"].(int), fc.Args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
@@ -6952,6 +6967,34 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
+
+func (ec *executionContext) unmarshalInputCourseFilter(ctx context.Context, obj interface{}) (model.CourseFilter, error) {
+	var it model.CourseFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"startsWith"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "startsWith":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startsWith"))
+			it.StartsWith, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
 
 func (ec *executionContext) unmarshalInputNewCourse(ctx context.Context, obj interface{}) (model.NewCourse, error) {
 	var it model.NewCourse
@@ -9456,6 +9499,14 @@ func (ec *executionContext) marshalOCourse2ᚖgithubᚗcomᚋFindMyProfessorsᚋ
 		return graphql.Null
 	}
 	return ec._Course(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOCourseFilter2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐCourseFilter(ctx context.Context, v interface{}) (*model.CourseFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCourseFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {

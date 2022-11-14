@@ -266,7 +266,7 @@ func (r *schoolResolver) CourseCodes(ctx context.Context, obj *model.School, ter
 }
 
 // Courses is the resolver for the courses field.
-func (r *schoolResolver) Courses(ctx context.Context, obj *model.School, term model.TermInput, first int, after *string) (*model.CourseConnection, error) {
+func (r *schoolResolver) Courses(ctx context.Context, obj *model.School, term model.TermInput, filter *model.CourseFilter, first int, after *string) (*model.CourseConnection, error) {
 	if after != nil {
 		cursor, err := pagination.DecodeCursor(after)
 		if err != nil {
@@ -274,7 +274,7 @@ func (r *schoolResolver) Courses(ctx context.Context, obj *model.School, term mo
 		}
 		after = &cursor
 	}
-	courses, total, err := r.Repository.GetCoursesBySchool(ctx, obj.ID, first, after, &term)
+	courses, total, err := r.Repository.GetCoursesBySchool(ctx, obj.ID, first, after, &term, filter)
 	if err != nil {
 		return nil, err
 	}

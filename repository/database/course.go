@@ -109,16 +109,26 @@ func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first
 	return courses, total, nil
 }
 
-func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first int, after *string, input *model.TermInput) (courses []*model.Course, total int, err error) {
+func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first int, after *string, input *model.TermInput, filter *model.CourseFilter) (courses []*model.Course, total int, err error) {
 	var sql string
 	var variables []any
 
 	if after != nil {
-		sql = `SELECT DISTINCT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 AND id > $4 ORDER BY id LIMIT $5`
-		variables = []any{input.Semester, input.Year, id, *after, first}
+		if filter != nil && filter.StartsWith != nil {
+			sql = `SELECT DISTINCT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 AND starts_with(courses.code, $3) WHERE courses.school_id = $4 AND id > $5 ORDER BY id LIMIT $6`
+			variables = []any{input.Semester, input.Year, *filter.StartsWith, id, *after, first}
+		} else {
+			sql = `SELECT DISTINCT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 AND id > $4 ORDER BY id LIMIT $5`
+			variables = []any{input.Semester, input.Year, id, *after, first}
+		}
 	} else {
-		sql = `SELECT DISTINCT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 ORDER BY id LIMIT $4`
-		variables = []any{input.Semester, input.Year, id, first}
+		if filter != nil && filter.StartsWith != nil {
+			sql = `SELECT DISTINCT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 AND starts_with(courses.code, $3) WHERE courses.school_id = $4 ORDER BY id LIMIT $5`
+			variables = []any{input.Semester, input.Year, *filter.StartsWith, id, first}
+		} else {
+			sql = `SELECT DISTINCT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 ORDER BY id LIMIT $4`
+			variables = []any{input.Semester, input.Year, id, first}
+		}
 	}
 
 	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
@@ -138,7 +148,17 @@ func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first in
 			courses = append(courses, &course)
 		}
 
-		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE school_id = $3`, input.Semester.String(), input.Year, id).Scan(&total)
+		var countSql string
+		var countVariables []any
+		if filter != nil && filter.StartsWith != nil {
+			countSql = `SELECT COUNT(*) FROM courses JOIN (SELECT distinct course_id FROM professor_courses WHERE semester = $1 AND year = $2) pc on courses.id = pc.course_id WHERE school_id = $3 AND starts_with(code, $4)`
+			countVariables = []any{input.Semester.String(), input.Year, id, filter.StartsWith}
+		} else {
+			countSql = `SELECT COUNT(*) FROM courses JOIN (SELECT distinct course_id FROM professor_courses WHERE semester = $1 AND year = $2) pc on courses.id = pc.course_id WHERE school_id = $3`
+			countVariables = []any{input.Semester.String(), input.Year, id}
+		}
+
+		err = tx.QueryRow(ctx, countSql, countVariables...).Scan(&total)
 		if err != nil {
 			return err
 		}

@@ -27,6 +27,10 @@ type CourseConnection struct {
 
 func (CourseConnection) IsConnection() {}
 
+type CourseFilter struct {
+	StartsWith *string `json:"startsWith"`
+}
+
 type NewCourse struct {
 	Name string `json:"name"`
 	Code string `json:"code"`
