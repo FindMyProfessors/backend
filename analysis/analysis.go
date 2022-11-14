@@ -2,6 +2,7 @@ package analysis
 
 import (
 	"errors"
+	"fmt"
 	"github.com/FindMyProfessors/backend/graph/model"
 	"time"
 )
@@ -51,7 +52,7 @@ func BeginAnalysis(reviews []*model.Review) (*model.ProfessorAnalysis, error) {
 }
 
 func getTags(reviews []*model.Review) []*model.TagAmount {
-	var tagMap map[model.Tag]int
+	tagMap := map[model.Tag]int{}
 
 	// get all tags for all reviews and insert into map
 	for _, review := range reviews {
@@ -83,15 +84,27 @@ func calculateChartValues(reviews []*model.Review) (values []*model.ChartValue, 
 
 	for _, review := range reviews {
 		t := review.Time
-		year := years[t.Year()]
-		monthReviews := year.Months[t.Month()]
+		fmt.Printf("review=%v\n", review)
+		year, ok := years[t.Year()]
+		if !ok {
+			year = Year{
+				Months: make([]*MonthReviews, 12, 12),
+			}
+		}
+
+		monthReviews := year.Months[t.Month()-1]
+		if monthReviews == nil {
+			monthReviews = &MonthReviews{
+				Reviews: []*model.Review{},
+			}
+		}
 		monthReviews.Reviews = append(monthReviews.Reviews, review)
 
 		monthReviews.DifficultySum += review.Difficulty
 		monthReviews.DifficultySum += review.Quality
 
 		// TODO: check if this is necessary
-		year.Months[t.Month()] = monthReviews
+		year.Months[t.Month()-1] = monthReviews
 	}
 
 	amountOfYears := len(years)
@@ -141,7 +154,25 @@ func calculateOneYear(values []*model.ChartValue, year Year, yearInt int) ([]*mo
 }
 
 func calculate(reviews []*model.Review, numberOfPoints int) (chartValues []*model.ChartValue) {
+	fmt.Printf("reviews=%v\n", reviews)
+	fmt.Printf("numberOfPoints=%d\n", numberOfPoints)
+	if len(reviews) == 0 {
+		return nil
+	}
 	chunkSize := len(reviews) / numberOfPoints
+
+	if chunkSize == 0 {
+		for _, review := range reviews {
+			chartValues = append(chartValues, &model.ChartValue{
+				Value: review.Quality,
+				Month: review.Time.Month().String(),
+				Year:  review.Time.Year(),
+			})
+		}
+		return chartValues
+	}
+
+	fmt.Printf("chunkSize=%d\n", chunkSize)
 
 	completed := 0
 
@@ -150,11 +181,14 @@ func calculate(reviews []*model.Review, numberOfPoints int) (chartValues []*mode
 		var timeMillisSum int64 = 0
 
 		for i := 0; i < chunkSize; i++ {
+			fmt.Printf("i=%d\n", i)
 			review := reviews[completed]
+			fmt.Printf("review=%v\n", review)
 			timeMillisSum += review.Time.UnixMilli()
 
 			currentSum += review.Quality
 			completed++
+			fmt.Printf("completed=%d\n", completed)
 		}
 
 		average := currentSum / float64(chunkSize)
