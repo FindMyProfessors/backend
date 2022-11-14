@@ -33,7 +33,7 @@ func (r *courseResolver) TaughtBy(ctx context.Context, obj *model.Course, term m
 		return nil, err
 	}
 	if total == 0 {
-		return &model.ProfessorConnection{TotalCount: 0, PageInfo: nil}, nil
+		return &model.ProfessorConnection{TotalCount: 0, PageInfo: &model.PageInfo{}}, nil
 	}
 
 	return &model.ProfessorConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(professors[0].ID, professors[len(professors)-1].ID)}, nil
@@ -175,7 +175,7 @@ func (r *professorResolver) Reviews(ctx context.Context, obj *model.Professor, f
 		return nil, err
 	}
 	if total == 0 {
-		return &model.ReviewConnection{TotalCount: 0, PageInfo: nil}, nil
+		return &model.ReviewConnection{TotalCount: 0, PageInfo: &model.PageInfo{}}, nil
 	}
 
 	return &model.ReviewConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(reviews[0].ID, reviews[len(reviews)-1].ID)}, nil
@@ -195,7 +195,7 @@ func (r *professorResolver) Teaches(ctx context.Context, obj *model.Professor, t
 		return nil, err
 	}
 	if total == 0 {
-		return &model.CourseConnection{TotalCount: 0, PageInfo: nil}, nil
+		return &model.CourseConnection{TotalCount: 0, PageInfo: &model.PageInfo{}}, nil
 	}
 
 	return &model.CourseConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(courses[0].ID, courses[len(courses)-1].ID)}, nil
@@ -230,7 +230,7 @@ func (r *queryResolver) Schools(ctx context.Context, first int, after *string) (
 		return nil, err
 	}
 	if total == 0 {
-		return &model.SchoolConnection{TotalCount: 0, PageInfo: nil}, nil
+		return &model.SchoolConnection{TotalCount: 0, PageInfo: &model.PageInfo{}}, nil
 	}
 
 	return &model.SchoolConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(schools[0].ID, schools[len(schools)-1].ID)}, nil
@@ -250,7 +250,7 @@ func (r *queryResolver) Professors(ctx context.Context, schoolID string, first i
 		return nil, err
 	}
 	if total == 0 {
-		return &model.ProfessorConnection{TotalCount: 0, PageInfo: nil}, nil
+		return &model.ProfessorConnection{TotalCount: 0, PageInfo: &model.PageInfo{}}, nil
 	}
 
 	return &model.ProfessorConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(professors[0].ID, professors[len(professors)-1].ID)}, nil
@@ -279,7 +279,7 @@ func (r *schoolResolver) Courses(ctx context.Context, obj *model.School, term mo
 		return nil, err
 	}
 	if total == 0 {
-		return &model.CourseConnection{TotalCount: 0, PageInfo: nil}, nil
+		return &model.CourseConnection{TotalCount: 0, PageInfo: &model.PageInfo{}}, nil
 	}
 
 	return &model.CourseConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(courses[0].ID, courses[len(courses)-1].ID)}, nil
@@ -299,7 +299,7 @@ func (r *schoolResolver) Professors(ctx context.Context, obj *model.School, firs
 		return nil, err
 	}
 	if total == 0 {
-		return &model.ProfessorConnection{TotalCount: 0, PageInfo: nil}, nil
+		return &model.ProfessorConnection{TotalCount: 0, PageInfo: &model.PageInfo{}}, nil
 	}
 
 	return &model.ProfessorConnection{TotalCount: total, PageInfo: pagination.GetPageInfo(professors[0].ID, professors[len(professors)-1].ID)}, nil
