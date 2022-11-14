@@ -19,7 +19,7 @@ type Queryable interface {
 }
 
 func (r *Repository) RegisterProfessorForCourse(ctx context.Context, courseID string, professorID string, term *model.TermInput) error {
-	sql := `INSERT INTO professor_courses (professor_id, course_id, year, semester) VALUES ($1, $2, $3, $3)`
+	sql := `INSERT INTO professor_courses (professor_id, course_id, year, semester) VALUES ($1, $2, $3, $4)`
 
 	_, err := r.DatabasePool.Exec(ctx, sql, professorID, courseID, term.Year, term.Semester.String())
 	if err != nil {
