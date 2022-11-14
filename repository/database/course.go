@@ -114,11 +114,11 @@ func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first in
 	var variables []any
 
 	if after != nil {
-		sql = `SELECT id, name, code FROM courses WHERE school_id = $1 AND year = $2 AND semester = $3 AND id > $4 ORDER BY id LIMIT $5`
-		variables = []any{id, input.Year, input.Semester, *after, first}
+		sql = `SELECT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 AND id > $4 ORDER BY id LIMIT $5`
+		variables = []any{input.Semester, input.Year, id, *after, first}
 	} else {
-		sql = `SELECT id, name, code FROM courses WHERE school_id = $1 AND year = $2 AND semester = $3 ORDER BY id LIMIT $4`
-		variables = []any{id, input.Year, input.Semester, first}
+		sql = `SELECT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 WHERE courses.school_id = $3 ORDER BY id LIMIT $4`
+		variables = []any{input.Semester, input.Year, id, first}
 	}
 
 	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
