@@ -128,9 +128,9 @@ func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first in
 		}
 
 		for rows.Next() {
-			var course model.Course
+			course := model.Course{SchoolID: id}
 			var intId int
-			err = rows.Scan(&intId, &course.Name, &course.Code, &course.SchoolID)
+			err = rows.Scan(&intId, &course.Name, &course.Code)
 			if err != nil {
 				return err
 			}
