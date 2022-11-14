@@ -69,7 +69,6 @@ func (r *Repository) GetSchoolByCourse(ctx context.Context, courseId string) (sc
 }
 
 func (r *Repository) GetSchools(ctx context.Context, first int, after *string) (schools []*model.School, total int, err error) {
-	var school model.School
 	var sql string
 	var variables []any
 	if after != nil {
@@ -87,19 +86,24 @@ func (r *Repository) GetSchools(ctx context.Context, first int, after *string) (
 		}
 
 		for rows.Next() {
+			var school model.School
 			var intId int
-			err = rows.Scan(&intId, &school.Name)
-			if err != nil {
+			if err = rows.Scan(&intId, &school.Name); err != nil {
 				return err
 			}
 			school.ID = strconv.Itoa(intId)
 			schools = append(schools, &school)
 		}
+
+		if err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM schools`).Scan(&total); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
 	if err != nil {
 		return nil, 0, err
 	}
-	return schools, total, err
+	return schools, total, nil
 }
