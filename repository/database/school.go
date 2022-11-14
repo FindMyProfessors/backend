@@ -32,7 +32,7 @@ func (r *Repository) GetSchoolById(ctx context.Context, id string) (school *mode
 
 	sql := `SELECT name FROM schools WHERE id = $1`
 
-	err = r.DatabasePool.QueryRow(ctx, sql, id).Scan(school.Name)
+	err = r.DatabasePool.QueryRow(ctx, sql, id).Scan(&school.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (r *Repository) GetSchoolByCourse(ctx context.Context, courseId string) (sc
 	}
 	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		sql := `SELECT school_id FROM courses WHERE id = $1`
-		err = tx.QueryRow(ctx, sql, courseId).Scan(course.SchoolID)
+		err = tx.QueryRow(ctx, sql, courseId).Scan(&course.SchoolID)
 		if err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func (r *Repository) GetSchoolByCourse(ctx context.Context, courseId string) (sc
 			ID: course.SchoolID,
 		}
 		sql = `SELECT name FROM schools WHERE id = $1`
-		err = tx.QueryRow(ctx, sql, course.SchoolID).Scan(school.Name)
+		err = tx.QueryRow(ctx, sql, course.SchoolID).Scan(&school.Name)
 		if err != nil {
 			return err
 		}

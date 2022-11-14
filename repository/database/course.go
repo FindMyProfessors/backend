@@ -36,7 +36,7 @@ func (r *Repository) GetCourseById(ctx context.Context, id string) (course *mode
 
 	sql := `SELECT name, code, school_id FROM courses  WHERE id = $1`
 
-	err = r.DatabasePool.QueryRow(ctx, sql, course.ID).Scan(course.Name, course.Code, course.SchoolID)
+	err = r.DatabasePool.QueryRow(ctx, sql, course.ID).Scan(&course.Name, &course.Code, &course.SchoolID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first
 			courses = append(courses, &course)
 		}
 
-		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM professor_courses WHERE professor_id = $1 AND year = $2 AND semester = $3`, id).Scan(&total)
+		err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM professor_courses WHERE professor_id = $1 AND year = $2 AND semester = $3`, id, input.Year, input.Semester.String()).Scan(&total)
 		if err != nil {
 			return err
 		}
