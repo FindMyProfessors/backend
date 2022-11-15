@@ -211,6 +211,11 @@ func (r *queryResolver) Professor(ctx context.Context, id string) (*model.Profes
 	return r.Repository.GetProfessorById(ctx, id)
 }
 
+// Course is the resolver for the course field.
+func (r *queryResolver) Course(ctx context.Context, id string) (*model.Course, error) {
+	return r.Repository.GetCourseById(ctx, id)
+}
+
 // School is the resolver for the school field.
 func (r *queryResolver) School(ctx context.Context, id string) (*model.School, error) {
 	return r.Repository.GetSchoolById(ctx, id)

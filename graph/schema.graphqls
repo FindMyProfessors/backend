@@ -20,7 +20,6 @@ input CourseFilter {
     startsWith: String
 }
 
-
 type School {
     id: ID!
     name: String!
@@ -172,6 +171,7 @@ input NewProfessor {
 type Query {
     professorByRMPId(rmpId: String!): Professor
     professor(id: ID!): Professor
+    course(id: ID!): Course
     school(id: ID!): School
     schools(first: Int! = 50, after: String): SchoolConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
     professors(schoolId: ID!, first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
