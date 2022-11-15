@@ -38,9 +38,9 @@ type Professor {
 
     linked: Boolean! @goField(forceResolver: true)
 
-    rating(topKPercentage: Float): Rating! @goField(forceResolver: true)
+    rating(topKPercentage: Float): Rating @goField(forceResolver: true)
 
-    analysis: ProfessorAnalysis! @goField(forceResolver: true)
+    analysis: ProfessorAnalysis @goField(forceResolver: true)
 
     school: School! @goField(forceResolver: true)
     reviews(first: Int! = 50, after: String): ReviewConnection! @pagination(maxLength: 50) @goField(forceResolver: true)

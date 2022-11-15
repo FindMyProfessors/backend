@@ -873,9 +873,9 @@ type Professor {
 
     linked: Boolean! @goField(forceResolver: true)
 
-    rating(topKPercentage: Float): Rating! @goField(forceResolver: true)
+    rating(topKPercentage: Float): Rating @goField(forceResolver: true)
 
-    analysis: ProfessorAnalysis! @goField(forceResolver: true)
+    analysis: ProfessorAnalysis @goField(forceResolver: true)
 
     school: School! @goField(forceResolver: true)
     reviews(first: Int! = 50, after: String): ReviewConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
@@ -2887,14 +2887,11 @@ func (ec *executionContext) _Professor_rating(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Rating)
 	fc.Result = res
-	return ec.marshalNRating2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐRating(ctx, field.Selections, res)
+	return ec.marshalORating2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐRating(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Professor_rating(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2956,14 +2953,11 @@ func (ec *executionContext) _Professor_analysis(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.ProfessorAnalysis)
 	fc.Result = res
-	return ec.marshalNProfessorAnalysis2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorAnalysis(ctx, field.Selections, res)
+	return ec.marshalOProfessorAnalysis2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorAnalysis(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Professor_analysis(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7670,9 +7664,6 @@ func (ec *executionContext) _Professor(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._Professor_rating(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -7690,9 +7681,6 @@ func (ec *executionContext) _Professor(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._Professor_analysis(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -8903,20 +8891,6 @@ func (ec *executionContext) marshalNProfessor2ᚖgithubᚗcomᚋFindMyProfessors
 	return ec._Professor(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProfessorAnalysis2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorAnalysis(ctx context.Context, sel ast.SelectionSet, v model.ProfessorAnalysis) graphql.Marshaler {
-	return ec._ProfessorAnalysis(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNProfessorAnalysis2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorAnalysis(ctx context.Context, sel ast.SelectionSet, v *model.ProfessorAnalysis) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._ProfessorAnalysis(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNProfessorConnection2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorConnection(ctx context.Context, sel ast.SelectionSet, v model.ProfessorConnection) graphql.Marshaler {
 	return ec._ProfessorConnection(ctx, sel, &v)
 }
@@ -8944,20 +8918,6 @@ func (ec *executionContext) marshalNRFC3339Time2timeᚐTime(ctx context.Context,
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNRating2githubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐRating(ctx context.Context, sel ast.SelectionSet, v model.Rating) graphql.Marshaler {
-	return ec._Rating(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNRating2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐRating(ctx context.Context, sel ast.SelectionSet, v *model.Rating) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Rating(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNReview2ᚕᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐReviewᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Review) graphql.Marshaler {
@@ -9645,11 +9605,25 @@ func (ec *executionContext) marshalOProfessor2ᚖgithubᚗcomᚋFindMyProfessors
 	return ec._Professor(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOProfessorAnalysis2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorAnalysis(ctx context.Context, sel ast.SelectionSet, v *model.ProfessorAnalysis) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProfessorAnalysis(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOProfessorConnection2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐProfessorConnection(ctx context.Context, sel ast.SelectionSet, v *model.ProfessorConnection) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._ProfessorConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORating2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐRating(ctx context.Context, sel ast.SelectionSet, v *model.Rating) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Rating(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOReview2ᚖgithubᚗcomᚋFindMyProfessorsᚋbackendᚋgraphᚋmodelᚐReview(ctx context.Context, sel ast.SelectionSet, v *model.Review) graphql.Marshaler {
