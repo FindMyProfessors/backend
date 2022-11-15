@@ -144,7 +144,7 @@ func GetProfessorByIdWithQueryable(ctx context.Context, queryable Queryable, id 
 
 	sql := `SELECT first_name, last_name, rmp_id FROM professors WHERE id = $1`
 
-	err = queryable.QueryRow(ctx, sql, id).Scan(&professor.FirstName, &professor.LastName, professor.RMPId)
+	err = queryable.QueryRow(ctx, sql, id).Scan(&professor.FirstName, &professor.LastName, &professor.RMPId)
 	if err != nil {
 		return nil, err
 	}
@@ -156,10 +156,10 @@ func (r *Repository) GetProfessorsByCourse(ctx context.Context, courseId string,
 	var sql string
 	var variables []any
 	if after != nil {
-		sql = `SELECT professors.id, professors.first_name, professors.last_name, professors.school_id FROM professors INNER JOIN professor_courses pc on professors.id = pc.professor_id WHERE course_id = $1 AND year = $2 AND semester = $3 AND id > $4 ORDER BY id LIMIT $5`
+		sql = `SELECT professors.id, professors.first_name, professors.last_name, professors.school_id, professors.rmp_id FROM professors INNER JOIN professor_courses pc on professors.id = pc.professor_id WHERE course_id = $1 AND year = $2 AND semester = $3 AND id > $4 ORDER BY id LIMIT $5`
 		variables = []any{courseId, input.Year, input.Semester, *after, first}
 	} else {
-		sql = `SELECT professors.id, professors.first_name, professors.last_name, professors.school_id FROM professors INNER JOIN professor_courses pc on professors.id = pc.professor_id WHERE course_id = $1 AND year = $2 AND semester = $3 ORDER BY id LIMIT $4`
+		sql = `SELECT professors.id, professors.first_name, professors.last_name, professors.school_id, professors.rmp_id FROM professors INNER JOIN professor_courses pc on professors.id = pc.professor_id WHERE course_id = $1 AND year = $2 AND semester = $3 ORDER BY id LIMIT $4`
 		variables = []any{courseId, input.Year, input.Semester, first}
 	}
 
@@ -172,7 +172,7 @@ func (r *Repository) GetProfessorsByCourse(ctx context.Context, courseId string,
 		for rows.Next() {
 			var professor model.Professor
 			var intId int
-			err = rows.Scan(&intId, &professor.FirstName, &professor.LastName, &professor.SchoolID)
+			err = rows.Scan(&intId, &professor.FirstName, &professor.LastName, &professor.SchoolID, &professor.RMPId)
 			if err != nil {
 				return err
 			}
