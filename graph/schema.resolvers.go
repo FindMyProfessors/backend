@@ -102,6 +102,10 @@ func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, to
 		topKTotal = int(float64(total) * (1 - *topKpercentage))
 	}
 
+	if total == 0 {
+		return nil, nil
+	}
+
 	totalQualitySum := 0.0
 	totalDifficultySum := 0.0
 
