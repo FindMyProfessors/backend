@@ -107,3 +107,15 @@ func (r *Repository) GetSchools(ctx context.Context, first int, after *string) (
 	}
 	return schools, total, nil
 }
+
+func (r *Repository) GetSchoolByProfessor(ctx context.Context, id string) (school *model.School, err error) {
+	sql := `SELECT schools.id, schools.name FROM schools JOIN professors p on schools.id = p.school_id WHERE p.id = $1`
+
+	school = &model.School{}
+
+	err = r.DatabasePool.QueryRow(ctx, sql, id).Scan(&school.ID, &school.Name)
+	if err != nil {
+		return nil, err
+	}
+	return school, nil
+}
