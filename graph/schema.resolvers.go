@@ -136,7 +136,11 @@ func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, to
 		}
 	}
 
-	m.AverageGrade = model.AllGrade[gradeIndexSum/totalGrades]
+	if gradeIndexSum == 0 || totalGrades == 0 {
+		m.AverageGrade = model.GradeOther
+	} else {
+		m.AverageGrade = model.AllGrade[gradeIndexSum/totalGrades]
+	}
 
 	m.TopKMostRecentDifficultyAverage = topKDifficultySum / float64(topKTotal)
 	m.TopKMostRecentQualityAverage = topKQualitySum / float64(topKTotal)
