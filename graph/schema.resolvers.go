@@ -77,7 +77,7 @@ func (r *professorResolver) Linked(ctx context.Context, obj *model.Professor) (b
 }
 
 // Rating is the resolver for the rating field.
-func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, topKpercentage *float64) (*model.Rating, error) {
+func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, topKPercentage *float64) (*model.Rating, error) {
 	// TODO: Implement cache
 	var err error
 
@@ -91,15 +91,15 @@ func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, to
 
 	var topKTotal int
 
-	if topKpercentage != nil {
-		if *topKpercentage > 1.0 {
+	if topKPercentage != nil {
+		if *topKPercentage > 1.0 {
 			return nil, errors.New("topKpercentage must be in (0, 1]")
 		}
 
 		if err != nil {
 			return nil, err
 		}
-		topKTotal = int(float64(total) * (1 - *topKpercentage))
+		topKTotal = int(float64(total) * (1 - *topKPercentage))
 	}
 
 	if total == 0 {
@@ -122,7 +122,7 @@ func (r *professorResolver) Rating(ctx context.Context, obj *model.Professor, to
 		totalQualitySum += review.Quality
 		totalDifficultySum += review.Difficulty
 
-		if topKpercentage != nil {
+		if topKPercentage != nil {
 			if i > topKStartIndex {
 				topKQualitySum += review.Quality
 				topKDifficultySum += review.Difficulty

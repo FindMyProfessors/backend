@@ -11,6 +11,8 @@ import (
 
 type Connection interface {
 	IsConnection()
+	GetTotalCount() int
+	GetPageInfo() *PageInfo
 }
 
 type ChartValue struct {
@@ -25,7 +27,9 @@ type CourseConnection struct {
 	Courses    []*Course `json:"courses"`
 }
 
-func (CourseConnection) IsConnection() {}
+func (CourseConnection) IsConnection()               {}
+func (this CourseConnection) GetTotalCount() int     { return this.TotalCount }
+func (this CourseConnection) GetPageInfo() *PageInfo { return this.PageInfo }
 
 type CourseFilter struct {
 	StartsWith *string `json:"startsWith"`
@@ -71,7 +75,9 @@ type ProfessorConnection struct {
 	Professors []*Professor `json:"professors"`
 }
 
-func (ProfessorConnection) IsConnection() {}
+func (ProfessorConnection) IsConnection()               {}
+func (this ProfessorConnection) GetTotalCount() int     { return this.TotalCount }
+func (this ProfessorConnection) GetPageInfo() *PageInfo { return this.PageInfo }
 
 type Rating struct {
 	RatingAmount                    int     `json:"ratingAmount"`
@@ -97,7 +103,9 @@ type ReviewConnection struct {
 	Reviews    []*Review `json:"reviews"`
 }
 
-func (ReviewConnection) IsConnection() {}
+func (ReviewConnection) IsConnection()               {}
+func (this ReviewConnection) GetTotalCount() int     { return this.TotalCount }
+func (this ReviewConnection) GetPageInfo() *PageInfo { return this.PageInfo }
 
 type School struct {
 	ID   string `json:"id"`
@@ -114,7 +122,9 @@ type SchoolConnection struct {
 	Schools    []*School `json:"schools"`
 }
 
-func (SchoolConnection) IsConnection() {}
+func (SchoolConnection) IsConnection()               {}
+func (this SchoolConnection) GetTotalCount() int     { return this.TotalCount }
+func (this SchoolConnection) GetPageInfo() *PageInfo { return this.PageInfo }
 
 type TagAmount struct {
 	Tag    Tag `json:"tag"`

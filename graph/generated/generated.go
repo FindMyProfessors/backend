@@ -90,7 +90,7 @@ type ComplexityRoot struct {
 		ID        func(childComplexity int) int
 		LastName  func(childComplexity int) int
 		Linked    func(childComplexity int) int
-		Rating    func(childComplexity int, topKpercentage *float64) int
+		Rating    func(childComplexity int, topKPercentage *float64) int
 		Reviews   func(childComplexity int, first int, after *string) int
 		School    func(childComplexity int) int
 		Teaches   func(childComplexity int, term model.TermInput, first int, after *string) int
@@ -174,7 +174,7 @@ type MutationResolver interface {
 }
 type ProfessorResolver interface {
 	Linked(ctx context.Context, obj *model.Professor) (bool, error)
-	Rating(ctx context.Context, obj *model.Professor, topKpercentage *float64) (*model.Rating, error)
+	Rating(ctx context.Context, obj *model.Professor, topKPercentage *float64) (*model.Rating, error)
 	Analysis(ctx context.Context, obj *model.Professor) (*model.ProfessorAnalysis, error)
 	School(ctx context.Context, obj *model.Professor) (*model.School, error)
 	Reviews(ctx context.Context, obj *model.Professor, first int, after *string) (*model.ReviewConnection, error)
@@ -862,7 +862,7 @@ type School {
     Returns a list of professors that teach at this school
     """
     courseCodes(term: TermInput!, ): [String]! @goField(forceResolver: true)
-    courses(term: TermInput!, filter: CourseFilter, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    courses(term: TermInput!, filter: CourseFilter, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 3200) @goField(forceResolver: true)
     professors(first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
 }
 
@@ -4886,7 +4886,7 @@ func (ec *executionContext) _School_courses(ctx context.Context, field graphql.C
 			return ec.resolvers.School().Courses(rctx, obj, fc.Args["term"].(model.TermInput), fc.Args["filter"].(*model.CourseFilter), fc.Args["first"].(int), fc.Args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
+			maxLength, err := ec.unmarshalNInt2int(ctx, 3200)
 			if err != nil {
 				return nil, err
 			}
