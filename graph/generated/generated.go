@@ -862,8 +862,8 @@ type School {
     Returns a list of professors that teach at this school
     """
     courseCodes(term: TermInput!, ): [String]! @goField(forceResolver: true)
-    courses(term: TermInput!, filter: CourseFilter, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 3200) @goField(forceResolver: true)
-    professors(first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    courses(term: TermInput!, filter: CourseFilter, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 5000) @goField(forceResolver: true)
+    professors(first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 1000) @goField(forceResolver: true)
 }
 
 type Professor {
@@ -879,7 +879,7 @@ type Professor {
 
     school: School! @goField(forceResolver: true)
     reviews(first: Int! = 50, after: String): ReviewConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
-    teaches(term: TermInput!, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    teaches(term: TermInput!, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 1000) @goField(forceResolver: true)
 }
 
 type Rating {
@@ -3140,7 +3140,7 @@ func (ec *executionContext) _Professor_teaches(ctx context.Context, field graphq
 			return ec.resolvers.Professor().Teaches(rctx, obj, fc.Args["term"].(model.TermInput), fc.Args["first"].(int), fc.Args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
+			maxLength, err := ec.unmarshalNInt2int(ctx, 1000)
 			if err != nil {
 				return nil, err
 			}
@@ -4886,7 +4886,7 @@ func (ec *executionContext) _School_courses(ctx context.Context, field graphql.C
 			return ec.resolvers.School().Courses(rctx, obj, fc.Args["term"].(model.TermInput), fc.Args["filter"].(*model.CourseFilter), fc.Args["first"].(int), fc.Args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			maxLength, err := ec.unmarshalNInt2int(ctx, 3200)
+			maxLength, err := ec.unmarshalNInt2int(ctx, 5000)
 			if err != nil {
 				return nil, err
 			}
@@ -4973,7 +4973,7 @@ func (ec *executionContext) _School_professors(ctx context.Context, field graphq
 			return ec.resolvers.School().Professors(rctx, obj, fc.Args["first"].(int), fc.Args["after"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			maxLength, err := ec.unmarshalNInt2int(ctx, 50)
+			maxLength, err := ec.unmarshalNInt2int(ctx, 1000)
 			if err != nil {
 				return nil, err
 			}

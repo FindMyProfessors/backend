@@ -27,8 +27,8 @@ type School {
     Returns a list of professors that teach at this school
     """
     courseCodes(term: TermInput!, ): [String]! @goField(forceResolver: true)
-    courses(term: TermInput!, filter: CourseFilter, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 3200) @goField(forceResolver: true)
-    professors(first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    courses(term: TermInput!, filter: CourseFilter, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 5000) @goField(forceResolver: true)
+    professors(first: Int! = 50, after: String): ProfessorConnection! @pagination(maxLength: 1000) @goField(forceResolver: true)
 }
 
 type Professor {
@@ -44,7 +44,7 @@ type Professor {
 
     school: School! @goField(forceResolver: true)
     reviews(first: Int! = 50, after: String): ReviewConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
-    teaches(term: TermInput!, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 50) @goField(forceResolver: true)
+    teaches(term: TermInput!, first: Int! = 50, after: String): CourseConnection! @pagination(maxLength: 1000) @goField(forceResolver: true)
 }
 
 type Rating {
