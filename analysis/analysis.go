@@ -84,7 +84,6 @@ func calculateChartValues(reviews []*model.Review) (values []*model.ChartValue, 
 
 	for _, review := range reviews {
 		t := review.Time
-		fmt.Printf("review=%v\n", review)
 		year, ok := years[t.Year()]
 		if !ok {
 			year = Year{
@@ -154,8 +153,6 @@ func calculateOneYear(values []*model.ChartValue, year Year, yearInt int) ([]*mo
 }
 
 func calculate(reviews []*model.Review, numberOfPoints int) (chartValues []*model.ChartValue) {
-	fmt.Printf("reviews=%v\n", reviews)
-	fmt.Printf("numberOfPoints=%d\n", numberOfPoints)
 	if len(reviews) == 0 {
 		return nil
 	}
@@ -183,7 +180,6 @@ func calculate(reviews []*model.Review, numberOfPoints int) (chartValues []*mode
 		for i := 0; i < chunkSize; i++ {
 			fmt.Printf("i=%d\n", i)
 			review := reviews[completed]
-			fmt.Printf("review=%v\n", review)
 			timeMillisSum += review.Time.UnixMilli()
 
 			currentSum += review.Quality
