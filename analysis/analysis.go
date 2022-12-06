@@ -2,7 +2,6 @@ package analysis
 
 import (
 	"errors"
-	"fmt"
 	"github.com/FindMyProfessors/backend/graph/model"
 	"time"
 )
@@ -169,8 +168,6 @@ func calculate(reviews []*model.Review, numberOfPoints int) (chartValues []*mode
 		return chartValues
 	}
 
-	fmt.Printf("chunkSize=%d\n", chunkSize)
-
 	completed := 0
 
 	for numberOfPoints > 0 {
@@ -178,13 +175,11 @@ func calculate(reviews []*model.Review, numberOfPoints int) (chartValues []*mode
 		var timeMillisSum int64 = 0
 
 		for i := 0; i < chunkSize; i++ {
-			fmt.Printf("i=%d\n", i)
 			review := reviews[completed]
 			timeMillisSum += review.Time.UnixMilli()
 
 			currentSum += review.Quality
 			completed++
-			fmt.Printf("completed=%d\n", completed)
 		}
 
 		average := currentSum / float64(chunkSize)

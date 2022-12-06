@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"github.com/FindMyProfessors/backend/graph/model"
 	"github.com/jackc/pgx/v5"
 	"strconv"
@@ -80,9 +79,6 @@ func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first
 		variables = []any{id, input.Year, input.Semester, first}
 	}
 
-	fmt.Printf("sql=%s\n", sql)
-	fmt.Printf("variables=%v\n", variables)
-
 	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, sql, variables...)
 		if err != nil {
@@ -107,9 +103,6 @@ func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("error occurred\n")
-		fmt.Printf("sql=%s\n", sql)
-		fmt.Printf("variables=%v\n", variables)
 		return nil, 0, err
 	}
 
