@@ -37,7 +37,7 @@ func (r *Repository) GetReviewsByProfessor(ctx context.Context, id string, first
 	if first == -1 {
 		first = MaxBatchReviewRetrieval
 	}
-	if after != nil {
+	if after != nil && len(*after) > 0 {
 		sql = `SELECT reviews.id, reviews.quality, reviews.difficulty, reviews.time, reviews.tags, reviews.grade FROM reviews WHERE professor_id = $1 AND id > $2 ORDER BY id LIMIT $3`
 		variables = []any{id, *after, first}
 	} else {

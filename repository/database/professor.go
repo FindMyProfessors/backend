@@ -59,7 +59,7 @@ func (r *Repository) CreateProfessor(ctx context.Context, schoolID string, input
 func (r *Repository) GetProfessorsBySchool(ctx context.Context, id string, first int, after *string) (professors []*model.Professor, total int, err error) {
 	var sql string
 	var variables []any
-	if after != nil {
+	if after != nil && len(*after) > 0 {
 		sql = `SELECT id, first_name, last_name, rmp_id FROM professors WHERE school_id = $1 AND id > $2 ORDER BY id LIMIT $3`
 		variables = []any{id, *after, first}
 	} else {
@@ -155,7 +155,7 @@ func GetProfessorByIdWithQueryable(ctx context.Context, queryable Queryable, id 
 func (r *Repository) GetProfessorsByCourse(ctx context.Context, courseId string, first int, after *string, input *model.TermInput) (professors []*model.Professor, total int, err error) {
 	var sql string
 	var variables []any
-	if after != nil {
+	if after != nil && len(*after) > 0 {
 		sql = `SELECT professors.id, professors.first_name, professors.last_name, professors.school_id, professors.rmp_id FROM professors INNER JOIN professor_courses pc on professors.id = pc.professor_id WHERE course_id = $1 AND year = $2 AND semester = $3 AND id > $4 ORDER BY id LIMIT $5`
 		variables = []any{courseId, input.Year, input.Semester, *after, first}
 	} else {

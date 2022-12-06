@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"github.com/FindMyProfessors/backend/graph/model"
 	"github.com/jackc/pgx/v5"
 	"strconv"
@@ -71,13 +72,16 @@ func (r *Repository) GetCourseCodesBySchool(ctx context.Context, id string, inpu
 func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first int, after *string, input *model.TermInput) (courses []*model.Course, total int, err error) {
 	var sql string
 	var variables []any
-	if after != nil {
+	if after != nil && len(*after) > 0 {
 		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 AND year = $2 AND semester = $3 AND id > $4 ORDER BY id LIMIT $5`
 		variables = []any{id, input.Year, input.Semester, *after, first}
 	} else {
 		sql = `SELECT courses.id, courses.name, courses.code, courses.school_id FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id WHERE professor_id = $1 AND year = $2 AND semester = $3 ORDER BY id LIMIT $4`
 		variables = []any{id, input.Year, input.Semester, first}
 	}
+
+	fmt.Printf("sql=%s\n", sql)
+	fmt.Printf("variables=%v\n", variables)
 
 	err = pgx.BeginTxFunc(ctx, r.DatabasePool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, sql, variables...)
@@ -103,6 +107,9 @@ func (r *Repository) GetCoursesByProfessor(ctx context.Context, id string, first
 		return nil
 	})
 	if err != nil {
+		fmt.Printf("error occurred\n")
+		fmt.Printf("sql=%s\n", sql)
+		fmt.Printf("variables=%v\n", variables)
 		return nil, 0, err
 	}
 
@@ -113,7 +120,7 @@ func (r *Repository) GetCoursesBySchool(ctx context.Context, id string, first in
 	var sql string
 	var variables []any
 
-	if after != nil {
+	if after != nil && len(*after) > 0 {
 		if filter != nil && filter.StartsWith != nil {
 			sql = `SELECT DISTINCT courses.id, courses.name, courses.code FROM courses INNER JOIN professor_courses pc on courses.id = pc.course_id AND pc.semester = $1 AND pc.year = $2 AND starts_with(courses.code, $3) WHERE courses.school_id = $4 AND id > $5 ORDER BY id LIMIT $6`
 			variables = []any{input.Semester, input.Year, *filter.StartsWith, id, *after, first}

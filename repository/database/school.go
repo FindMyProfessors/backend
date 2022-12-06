@@ -71,7 +71,7 @@ func (r *Repository) GetSchoolByCourse(ctx context.Context, courseId string) (sc
 func (r *Repository) GetSchools(ctx context.Context, first int, after *string) (schools []*model.School, total int, err error) {
 	var sql string
 	var variables []any
-	if after != nil {
+	if after != nil && len(*after) > 0 {
 		sql = `SELECT id, name FROM schools WHERE id > $1 ORDER BY id LIMIT $2`
 		variables = []any{*after, first}
 	} else {
