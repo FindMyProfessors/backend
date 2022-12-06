@@ -8,16 +8,16 @@ import (
 	"github.com/FindMyProfessors/backend/graph/model"
 )
 
-func DecodeCursor(cursor *string) (string, error) {
+func DecodeCursor(cursor *string) (*string, error) {
 	if cursor == nil {
-		return "0", nil
+		return nil, nil
 	}
 	bytes, err := base64.StdEncoding.DecodeString(*cursor)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	bytesString := string(bytes)
-	return bytesString, nil
+	return &bytesString, nil
 }
 
 func GetPageInfo(firstElement string, lastElement string, lengthOfOutput int, amountRequested int) *model.PageInfo {

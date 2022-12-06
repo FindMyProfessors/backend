@@ -26,7 +26,7 @@ func (r *courseResolver) TaughtBy(ctx context.Context, obj *model.Course, term m
 		if err != nil {
 			return nil, err
 		}
-		after = &cursor
+		after = cursor
 	}
 	professors, total, err := r.Repository.GetProfessorsByCourse(ctx, obj.ID, first, after, &term)
 	if err != nil {
@@ -176,7 +176,7 @@ func (r *professorResolver) Reviews(ctx context.Context, obj *model.Professor, f
 		if err != nil {
 			return nil, err
 		}
-		after = &cursor
+		after = cursor
 	}
 	reviews, total, err := r.Repository.GetReviewsByProfessor(ctx, obj.ID, first, after)
 	if err != nil {
@@ -196,7 +196,7 @@ func (r *professorResolver) Teaches(ctx context.Context, obj *model.Professor, t
 		if err != nil {
 			return nil, err
 		}
-		after = &cursor
+		after = cursor
 	}
 	courses, total, err := r.Repository.GetCoursesByProfessor(ctx, obj.ID, first, after, &term)
 	if err != nil {
@@ -236,7 +236,7 @@ func (r *queryResolver) Schools(ctx context.Context, first int, after *string) (
 		if err != nil {
 			return nil, err
 		}
-		after = &cursor
+		after = cursor
 	}
 	schools, total, err := r.Repository.GetSchools(ctx, first, after)
 	if err != nil {
@@ -256,7 +256,7 @@ func (r *queryResolver) Professors(ctx context.Context, schoolID string, first i
 		if err != nil {
 			return nil, err
 		}
-		after = &cursor
+		after = cursor
 	}
 	professors, total, err := r.Repository.GetProfessorsBySchool(ctx, schoolID, first, after)
 	if err != nil {
@@ -285,7 +285,7 @@ func (r *schoolResolver) Courses(ctx context.Context, obj *model.School, term mo
 		if err != nil {
 			return nil, err
 		}
-		after = &cursor
+		after = cursor
 	}
 	courses, total, err := r.Repository.GetCoursesBySchool(ctx, obj.ID, first, after, &term, filter)
 	if err != nil {
@@ -305,7 +305,7 @@ func (r *schoolResolver) Professors(ctx context.Context, obj *model.School, firs
 		if err != nil {
 			return nil, err
 		}
-		after = &cursor
+		after = cursor
 	}
 	professors, total, err := r.Repository.GetProfessorsBySchool(ctx, obj.ID, first, after)
 	if err != nil {
